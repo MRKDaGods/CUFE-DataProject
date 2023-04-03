@@ -40,6 +40,22 @@ namespace Tests
 			}
 		}
 
+		TEST_METHOD(Peek)
+		{
+			LinkedStack<int> s;
+			for (int i = 0; i < 5; i++) {
+				s.Push(i);
+			}
+
+			int e;
+			Assert::IsTrue(s.Peek(e));
+			Assert::AreEqual(e, 4);
+
+			while (s.Pop()) {}
+
+			Assert::IsFalse(s.Peek(e));
+		}
+
 		TEST_METHOD(Empty)
 		{
 			LinkedStack<int> s;

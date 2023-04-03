@@ -31,6 +31,14 @@ namespace collections {
 			return m_LinkedList.DeleteNode(tail);
 		}
 
+		virtual bool Peek(T& val) override {
+			if (m_LinkedList.IsEmpty()) return false;
+
+			//get value of tail
+			val = m_LinkedList.GetTail()->value;
+			return true;
+		}
+
 		virtual bool IsEmpty() override {
 			return m_LinkedList.IsEmpty();
 		}

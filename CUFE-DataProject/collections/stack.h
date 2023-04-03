@@ -2,6 +2,9 @@
 
 namespace collections 
 {
+	/// <summary>
+	/// Abstract stack interface
+	/// </summary>
 	template<typename T>
 	class Stack
 	{
@@ -15,6 +18,11 @@ namespace collections
 		/// Pops the element at the top of the stack
 		/// </summary>
 		virtual bool Pop(T* val = 0) abstract;
+
+		/// <summary>
+		/// Gets the element at the top of the stack
+		/// </summary>
+		virtual bool Peek(T& val) abstract;
 
 		/// <summary>
 		/// Is the stack empty?
