@@ -76,6 +76,16 @@ namespace collections {
 			Clear();
 		}
 
+		/// <summary>
+		/// Returns the head of the linked list
+		/// </summary>
+		LinkedListNode<T>* GetHead() {
+			return m_Head;
+		}
+
+		/// <summary>
+		/// Returns the tail of the linked list
+		/// </summary>
 		LinkedListNode<T>* GetTail() {
 			return m_Tail;
 		}
@@ -116,6 +126,9 @@ namespace collections {
 			return true;
 		}
 
+		/// <summary>
+		/// Adds an element to the list
+		/// </summary>
 		virtual void Add(T val) override {
 			auto node = new LinkedListNode<T>(val);
 
@@ -137,6 +150,9 @@ namespace collections {
 			}
 		}
 
+		/// <summary>
+		/// Removes an element from the list
+		/// </summary>
 		virtual bool Remove(T val) override {
 			//return false if empty
 			if (m_Head == 0) return false;
@@ -150,10 +166,16 @@ namespace collections {
 			return DeleteNode(node);
 		}
 
+		/// <summary>
+		/// Is the list empty?
+		/// </summary>
 		virtual bool IsEmpty() override {
 			return m_Head == 0;
 		}
 
+		/// <summary>
+		/// Returns the number of elements in a list
+		/// </summary>
 		virtual int GetLength() override {
 			if (m_Head == 0) return 0;
 
@@ -165,6 +187,9 @@ namespace collections {
 			return len;
 		}
 
+		/// <summary>
+		/// Clears the list
+		/// </summary>
 		virtual void Clear() override {
 			if (m_Head == 0) return;
 
@@ -174,6 +199,9 @@ namespace collections {
 			}
 		}
 
+		/// <summary>
+		/// Accesses an item using an index
+		/// </summary>
 		virtual T* operator[](int idx) override {
 			//no checks, user should make sure that idx < length and >= 0
 			int len = 0;

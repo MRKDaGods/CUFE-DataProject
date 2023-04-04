@@ -30,6 +30,12 @@
     <ClInclude Include="core\process.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="collections\queue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="collections\linked_queue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

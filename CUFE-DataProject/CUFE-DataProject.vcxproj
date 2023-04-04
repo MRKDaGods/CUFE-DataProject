@@ -129,8 +129,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="collections\linked_list.h" />
+    <ClInclude Include="collections\linked_queue.h" />
     <ClInclude Include="collections\linked_stack.h" />
     <ClInclude Include="collections\list.h" />
+    <ClInclude Include="collections\queue.h" />
     <ClInclude Include="collections\stack.h" />
     <ClInclude Include="core\process.h" />
   </ItemGroup>

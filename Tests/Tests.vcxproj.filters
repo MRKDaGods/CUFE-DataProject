@@ -21,5 +21,8 @@
     <ClCompile Include="linked_stack_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="linked_queue_test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
