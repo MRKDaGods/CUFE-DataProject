@@ -8,12 +8,6 @@ namespace collections {
 	/// </summary>
 	template<typename T>
 	struct LinkedListNode {
-		LinkedListNode(T& val) {
-			prev = next = 0;
-
-			value = val;
-		}
-
 		/// <summary>
 		/// Previous node
 		/// </summary>
@@ -28,6 +22,12 @@ namespace collections {
 		/// Node value
 		/// </summary>
 		T value;
+
+		LinkedListNode(T& val) {
+			prev = next = 0;
+
+			value = val;
+		}
 	};
 
 	template<typename T>

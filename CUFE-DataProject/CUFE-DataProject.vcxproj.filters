@@ -27,6 +27,9 @@
     <ClInclude Include="collections\linked_stack.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="core\process.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
