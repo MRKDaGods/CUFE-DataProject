@@ -102,7 +102,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
@@ -134,10 +134,20 @@
     <ClInclude Include="collections\list.h" />
     <ClInclude Include="collections\queue.h" />
     <ClInclude Include="collections\stack.h" />
+    <ClInclude Include="common.h" />
+    <ClInclude Include="core\application.h" />
     <ClInclude Include="core\process.h" />
+    <ClInclude Include="ui\gui.h" />
+    <ClInclude Include="ui\color.h" />
+    <ClInclude Include="ui\renderer.h" />
+    <ClInclude Include="utils\vector2.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="core\application.cpp" />
+    <ClCompile Include="ui\gui.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ui\renderer.cpp" />
+    <ClCompile Include="utils\vector2.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
