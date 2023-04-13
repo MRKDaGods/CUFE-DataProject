@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "renderer.h"
 
 namespace ui {
@@ -9,6 +11,11 @@ namespace ui {
 
 	public:
 		GUI(Renderer* renderer);
+
+		/// <summary>
+		/// Renders a string at the specified position
+		/// </summary>
+		void DrawString(_UTIL Vector2 pos, _STD wstring text, Color color);
 
 		/// <summary>
 		/// Draws a line from start to end

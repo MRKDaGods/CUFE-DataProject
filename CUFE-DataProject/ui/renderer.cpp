@@ -31,12 +31,12 @@ namespace ui {
 		//update active screen buffer
 		SetConsoleActiveScreenBuffer(m_StdOutHandle);
 
-		//update font to consolas (font sz = 4)
+		//update font to consolas (font sz = 9)
 		CONSOLE_FONT_INFOEX cfi;
 		cfi.cbSize = sizeof(cfi);
 		cfi.nFont = 0;
-		cfi.dwFontSize.X = 4;
-		cfi.dwFontSize.Y = 4;
+		cfi.dwFontSize.X = 9;
+		cfi.dwFontSize.Y = 9;
 		cfi.FontFamily = FF_DONTCARE;
 		cfi.FontWeight = FW_NORMAL;
 		wcscpy_s(cfi.FaceName, L"Consolas");

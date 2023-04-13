@@ -1,4 +1,4 @@
-#include "application.h"
+﻿#include "application.h"
 
 #include <Windows.h>
 
@@ -11,7 +11,7 @@ namespace core {
 		m_LastFrameTime = _CHRONO system_clock::now();
 	}
 
-	void core::Application::Initialize(const char* name, _UTIL Vector2 screenSize) {
+	void Application::Initialize(const char* name, _UTIL Vector2 screenSize) {
 		m_Name = name;
 
 		//initialize renderer
@@ -40,6 +40,8 @@ namespace core {
 
 		t += 0.05;
 
+		m_GUI.DrawString(_UTIL Vector2(10, 10), L"Test from ammar and andrew tate", _UI COLOR_FG_WHITE);
+
 		//axis
 		m_GUI.DrawLine(_UTIL Vector2(0.f, m_Renderer.GetScreenSize().y / 2.f), _UTIL Vector2(m_Renderer.GetScreenSize().x, m_Renderer.GetScreenSize().y / 2.f), ui::COLOR_FG_WHITE, L'.');
 
@@ -47,13 +49,20 @@ namespace core {
 		
 		float angle = M_PI * 5;
 		for (float i = 0; i <= angle; i += angle / 100.f) {
-			float p = 50 * cosf(i + t);
+			float c = 50 * cosf(i + t);
 
 			auto sz = m_Renderer.GetScreenSize();
-			m_Renderer.SetPixel(i * 20, sz.y / 2.f - p, 0x2588, ui::COLOR_FG_MAGENTA);
+			m_Renderer.SetPixel(i * 20, sz.y / 2.f - c, 0x2588, ui::COLOR_FG_MAGENTA);
 
-			float z = 50 * sinf(i + t);
-			m_Renderer.SetPixel(i * 20, sz.y / 2.f - z, 0x2588, ui::COLOR_FG_WHITE);
+			float s = 50 * sinf(i + t);
+			m_Renderer.SetPixel(i * 20, sz.y / 2.f - s, 0x2588, ui::COLOR_FG_WHITE);
+
+			if (c == 0.f) {
+				c = 0.0001f;
+			}
+
+			auto t = s / c;
+			m_Renderer.SetPixel(i * 10, sz.y / 2.f - t, 0x2588, ui::COLOR_FG_YELLOW);
 		}
 
 		//m_GUI.DrawLine(_UTIL Vector2(x, 0.f), _UTIL Vector2(100.f, 50.f));
