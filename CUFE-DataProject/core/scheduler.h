@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../common.h"
+#include "../ui/gui.h"
 #include "../collections/linked_list.h"
 #include "../collections/linked_queue.h"
 #include "processor.h"
@@ -9,6 +10,11 @@
 namespace core {
 	class Scheduler {
 	private:
+		/// <summary>
+		/// The user interface controller
+		/// </summary>
+		_UI GUI m_UIController;
+
 		/// <summary>
 		/// List of available processors
 		/// </summary>
@@ -20,8 +26,7 @@ namespace core {
 		_COLLECTION LinkedQueue<Process*> m_NewProcesses;
 
 	public:
+		Scheduler();
 		~Scheduler();
-
-
 	};
 }

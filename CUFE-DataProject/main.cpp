@@ -2,22 +2,14 @@
 #include <Windows.h>
 
 #include "common.h"
-#include "core/application.h"
+#include "core/scheduler.h"
 
 using namespace core;
 
 int main() {
-	Application app;
+	Scheduler sched;
 
-	//initialize app
-	app.Initialize(APP_NAME, _UTIL Vector2(APP_SIZE_WIDTH, APP_SIZE_HEIGHT));
-
-	//main loop
 	while (true) {
-		//update app
-		app.Update();
-
-		//sleep for 10ms
 		Sleep(10);
 	}
 

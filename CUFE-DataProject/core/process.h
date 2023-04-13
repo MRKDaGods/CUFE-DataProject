@@ -47,12 +47,7 @@ namespace core {
 		_COLLECTION LinkedQueue<ProcessIOData> m_IODataQueue;
 
 	public:
-		Process(int pid, int ct);
-
-		/// <summary>
-		/// Sets the process arrival time
-		/// </summary>
-		void SetArrivalTime(int at);
+		Process(int pid, int at, int ct, ProcessIOData* ioData = 0, int ioDataSz = 0);
 
 		/// <summary>
 		/// (TRT) Total time a proc spends in the system from its arrival to its termination
