@@ -35,4 +35,15 @@ namespace ui {
 		COLOR_BG_YELLOW = 0x00E0,
 		COLOR_BG_WHITE = 0x00F0
 	};
+
+	/// <summary>
+	/// Bitwise or operator
+	/// </summary>
+	inline Color operator|(Color left, Color right) {
+		return (Color)((int)left | (int)right);
+	}
+
+	inline Color operator^(Color left, int right) {
+		return (Color)((int)left ^ right);
+	}
 }

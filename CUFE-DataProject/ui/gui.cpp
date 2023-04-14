@@ -24,8 +24,11 @@ namespace ui {
 		}
 	}
 
-	void GUI::Initialize(const char* name, _UTIL Vector2 screenSize) {
+	void GUI::Initialize(const char* name, _UTIL Vector2 screenSize, _STD function<void()> externalCallback) {
 		m_Name = name;
+
+		//set external callback
+		m_ExternalCallback = externalCallback;
 
 		//initialize renderer
 		m_Renderer.Initialize(name, screenSize);
@@ -35,9 +38,12 @@ namespace ui {
 	}
 
 	void GUI::DrawString(_UTIL Vector2 pos, _STD wstring text, Color color) {
-		for (int i = 0; i < text.size(); i++)
-		{
-			m_Renderer.SetPixel(pos.x + i, pos.y, text[i], color);
+		DrawString((int)pos.x, (int)pos.y, text, color);
+	}
+
+	void GUI::DrawString(int x, int y, _STD wstring text, Color color) {
+		for (int i = 0; i < text.size(); i++) {
+			m_Renderer.SetPixel(x + i, y, text[i], color);
 		}
 	}
 
@@ -58,7 +64,60 @@ namespace ui {
 		}
 	}
 
+	bool GUI::DrawButton(int x, int y, int w, int h, _STD wstring text, Color color) {
+		//width is min of text length w/padding or supplied width
+		w = min(w, text.length() + 3);
+
+		//is button clicked?
+		bool buttonDown = m_Renderer.IsMouseDown(0, x, y, w, h);
+
+		if (buttonDown) {
+			//invert color if button is down
+			//xor with 0x00ff
+			color = color ^ 0x00ff;
+		}
+		
+		//render button itself
+		DrawLine(_UTIL Vector2(x, y), _UTIL Vector2(x + w, y), color, L'.');
+		DrawLine(_UTIL Vector2(x, y + h), _UTIL Vector2(x + w, y + h), color, L'.');
+
+		DrawLine(_UTIL Vector2(x, y - 1), _UTIL Vector2(x, y + h), color, L'.');
+		DrawLine(_UTIL Vector2(x + w, y), _UTIL Vector2(x + w, y + h), color, L'.');
+
+		//render text centered
+		int textX = (int)_STD round(x + w / 2.f - text.length() / 2.f);
+		int textY = (int)_STD round(y + h / 2.f);
+		DrawString(textX, textY, text, color);
+
+		return buttonDown;
+	}
+
 	float t = 0;
+
+	void GUI::draw(int x, int y, int w, int h) {
+		//DrawLine(_UTIL Vector2(x, y + h / 2.f), _UTIL Vector2(x + w, y + h / 2.f), ui::COLOR_FG_WHITE, L'.');
+
+		//DrawLine(_UTIL Vector2(x + w / 2.f, y), _UTIL Vector2(x + w / 2.f, y + h), ui::COLOR_FG_WHITE, L'.');
+
+		float angle = M_PI * 5;
+		for (float i = 0; i <= angle; i += angle / 100.f) {
+			float c = 10 * cosf(i + t);
+
+			auto sz = _UTIL Vector2(w, h);
+			m_Renderer.SetPixel(x + i * 8, y + sz.y / 2.f - c, 0x2588, ui::COLOR_FG_MAGENTA | _UI COLOR_BG_WHITE);
+
+			float s = 10 * sinf(i + t);
+			m_Renderer.SetPixel(x + i * 8, y + sz.y / 2.f - s, 0x2588, ui::COLOR_FG_BLACK | _UI COLOR_BG_WHITE);
+
+			if (c == 0.f) {
+				c = 0.0001f;
+			}
+
+			auto t = s / c;
+			//m_Renderer.SetPixel(i * 10, sz.y / 2.f - t, 0x2588, ui::COLOR_FG_YELLOW);
+		}
+	}
+
 	void GUI::UIRenderLoop() {
 		while (true) {
 			//calculate fps, fps=1/elapsed time
@@ -77,36 +136,14 @@ namespace ui {
 			//clear screen
 			m_Renderer.Clear();
 
-			//render components?
+			//render external callback
+			if (m_ExternalCallback != 0) {
+				m_ExternalCallback();
+			}
 
 			t += 0.05;
 
-			DrawString(_UTIL Vector2(10, 10), L"Test from ammar and andrew tate", _UI COLOR_FG_WHITE);
-
-			//axis
-			DrawLine(_UTIL Vector2(0.f, m_Renderer.GetScreenSize().y / 2.f), _UTIL Vector2(m_Renderer.GetScreenSize().x, m_Renderer.GetScreenSize().y / 2.f), ui::COLOR_FG_WHITE, L'.');
-
-			DrawLine(_UTIL Vector2(m_Renderer.GetScreenSize().x / 2.f, 0.f), _UTIL Vector2(m_Renderer.GetScreenSize().x / 2.f, m_Renderer.GetScreenSize().y), ui::COLOR_FG_WHITE, L'.');
-
-			float angle = M_PI * 5;
-			for (float i = 0; i <= angle; i += angle / 100.f) {
-				float c = 50 * cosf(i + t);
-
-				auto sz = m_Renderer.GetScreenSize();
-				m_Renderer.SetPixel(i * 20, sz.y / 2.f - c, 0x2588, ui::COLOR_FG_MAGENTA);
-
-				float s = 50 * sinf(i + t);
-				m_Renderer.SetPixel(i * 20, sz.y / 2.f - s, 0x2588, ui::COLOR_FG_WHITE);
-
-				if (c == 0.f) {
-					c = 0.0001f;
-				}
-
-				auto t = s / c;
-				m_Renderer.SetPixel(i * 10, sz.y / 2.f - t, 0x2588, ui::COLOR_FG_YELLOW);
-			}
-
-			//m_GUI.DrawLine(_UTIL Vector2(x, 0.f), _UTIL Vector2(100.f, 50.f));
+			draw(60, 2, 10, 30);
 
 			//update title w/fps
 			char title[256];

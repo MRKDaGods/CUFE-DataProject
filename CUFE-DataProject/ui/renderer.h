@@ -11,6 +11,11 @@ namespace ui {
 	class Renderer {
 	private:
 		/// <summary>
+		/// The std in handle
+		/// </summary>
+		void* m_StdInHandle;
+
+		/// <summary>
 		/// The std out handle
 		/// </summary>
 		void* m_StdOutHandle;
@@ -58,5 +63,15 @@ namespace ui {
 		/// Returns the screen size
 		/// </summary>
 		_UTIL Vector2 GetScreenSize();
+
+		/// <summary>
+		/// The stdin handle
+		/// </summary>
+		void* GetStdInHandle();
+
+		/// <summary>
+		/// Determines if mouse is down at a certain pos
+		/// </summary>
+		bool IsMouseDown(int button, int x, int y, int w, int h);
 	};
 }
