@@ -336,4 +336,9 @@ namespace core {
 		RenderActionsToolbar();
 		RenderStatusbar();
 	}
+
+	void SchedulerView::NotifyStopped() {
+		//update color
+		m_ToolbarColor = COL_BG(DARK_RED);
+	}
 }

@@ -24,5 +24,11 @@
     <ClCompile Include="linked_queue_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="array_list_test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="linked_priority_queue_test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

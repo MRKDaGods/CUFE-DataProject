@@ -32,6 +32,9 @@ namespace collections {
 
 	template<typename T>
 	class LinkedList : public List<T> {
+	private:
+		int m_Count;
+
 	protected:
 		/// <summary>
 		/// Linked list head
@@ -64,11 +67,22 @@ namespace collections {
 			return 0;
 		}
 
+		LinkedListNode<T>* GetNodeAtIndex(int idx) {
+			if (idx >= m_Count || idx < 0) return 0;
+
+			int len = 0;
+			for (LinkedListNode<T>* node = m_Head; node; node = node->next) {
+				if (len++ == idx) return node;
+			}
+
+			return 0;
+		}
+
 	public:
 		/// <summary>
 		/// Constructor, initialize head to 0
 		/// </summary>
-		LinkedList() : m_Head(0), m_Tail(0) {
+		LinkedList() : m_Count(0), m_Head(0), m_Tail(0) {
 		}
 
 		~LinkedList() {
@@ -123,6 +137,9 @@ namespace collections {
 			//delete ptr
 			delete node;
 
+			//decrement counter
+			m_Count--;
+
 			return true;
 		}
 
@@ -148,6 +165,41 @@ namespace collections {
 				//new node is now the tail
 				m_Tail = node;
 			}
+
+			//increment counter
+			m_Count++;
+		}
+
+		/// <summary>
+		/// Inserts an element at the specified position
+		/// </summary>
+		virtual bool Insert(int pos, T val) override {
+			if (pos > m_Count || pos < 0) return false;
+
+			//if empty, just add
+			if (m_Head == 0 || pos == m_Count) {
+				Add(val);
+				return true;
+			}
+
+			LinkedListNode<T>* node = new LinkedListNode<T>(val);
+			LinkedListNode<T>* oldNode = GetNodeAtIndex(pos);
+
+			node->prev = oldNode->prev;
+			if (oldNode->prev != 0) {
+				oldNode->prev->next = node;
+			}
+
+			oldNode->prev = node;
+			node->next = oldNode;
+
+			if (oldNode == m_Head) {
+				m_Head = node;
+			}
+
+			m_Count++;
+
+			return true;
 		}
 
 		/// <summary>
@@ -167,6 +219,13 @@ namespace collections {
 		}
 
 		/// <summary>
+		/// Does the element exist?
+		/// </summary>
+		virtual bool Contains(T val) override {
+			return GetNodeWithValue(val) != 0;
+		}
+
+		/// <summary>
 		/// Is the list empty?
 		/// </summary>
 		virtual bool IsEmpty() override {
@@ -177,14 +236,7 @@ namespace collections {
 		/// Returns the number of elements in a list
 		/// </summary>
 		virtual int GetLength() override {
-			if (m_Head == 0) return 0;
-
-			int len = 0;
-			for (LinkedListNode<T>* node = m_Head; node; node = node->next) {
-				len++;
-			}
-
-			return len;
+			return m_Count;
 		}
 
 		/// <summary>
@@ -203,12 +255,11 @@ namespace collections {
 		/// Accesses an item using an index
 		/// </summary>
 		virtual T* operator[](int idx) override {
-			//no checks, user should make sure that idx < length and >= 0
-			int len = 0;
-			for (LinkedListNode<T>* node = m_Head; node; node = node->next) {
-				if (len == idx) return &node->value;
+			if (idx >= m_Count || idx < 0) return 0;
 
-				len++;
+			LinkedListNode<T>* node = GetNodeAtIndex(idx);
+			if (node != 0) {
+				return &node->value;
 			}
 
 			return 0;

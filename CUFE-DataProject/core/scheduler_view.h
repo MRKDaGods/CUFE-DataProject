@@ -88,5 +88,10 @@ namespace core {
 		/// The external UI callback
 		/// </summary>
 		void UICallback();
+
+		/// <summary>
+		/// Notifies the view that the simulation has been stopped
+		/// </summary>
+		void NotifyStopped();
 	};
 }

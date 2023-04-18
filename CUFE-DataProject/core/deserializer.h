@@ -12,6 +12,10 @@ namespace core {
 	struct SigkillTimeInfo {
 		int time;
 		int proc_pid;
+
+		bool operator==(SigkillTimeInfo& other) {
+			return time == other.time && proc_pid == other.proc_pid;
+		}
 	};
 
 	/// <summary>

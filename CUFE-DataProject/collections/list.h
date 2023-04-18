@@ -13,9 +13,19 @@ namespace collections {
 		virtual void Add(T val) abstract;
 
 		/// <summary>
+		/// Inserts an element at the specified position
+		/// </summary>
+		virtual bool Insert(int pos, T val) abstract;
+
+		/// <summary>
 		/// Removes an element from the list
 		/// </summary>
 		virtual bool Remove(T val) abstract;
+
+		/// <summary>
+		/// Does the element exist?
+		/// </summary>
+		virtual bool Contains(T val) abstract;
 
 		/// <summary>
 		/// Is the list empty?

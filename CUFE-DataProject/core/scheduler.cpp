@@ -1,6 +1,9 @@
 #include "scheduler.h"
 #include "deserializer.h"
 #include "processor_fcfs.h"
+#include "processor_sjf.h"
+#include "processor_rr.h"
+#include "random_engine.h"
 
 namespace core {
 	Scheduler::Scheduler() : m_View(this, &m_UI) {
@@ -9,6 +12,9 @@ namespace core {
 
 		//zero out load file info
 		memset(&m_LoadFileInfo, 0, sizeof(LoadFileInfo));
+
+		//zero out io mutex
+		memset(&m_IOMutex, 0, sizeof(IOMutex));
 	}
 	
 	Scheduler::~Scheduler() {
@@ -41,6 +47,73 @@ namespace core {
 		return proc;
 	}
 
+	void Scheduler::UpdateIO() {
+		//handle current execution
+		if (m_IOMutex.owner != 0) {
+			//decrement duration
+			m_IOMutex.io_data.duration--;
+
+			//we have finished
+			if (m_IOMutex.io_data.duration == 0) {
+				//process should be scheduled again
+				Schedule(m_IOMutex.owner);
+
+				//clean mutex
+				memset(&m_IOMutex, 0, sizeof(IOMutex));
+			}
+		}
+
+		//check for another IO operation
+		if (m_IOMutex.owner == 0) {
+			//find potential owner in BLK list
+			if (m_BlockedProcesses.Dequeue(&m_IOMutex.owner)) {
+				m_IOMutex.io_data = m_IOMutex.owner->GetIOData();
+			}
+		}
+	}
+
+	void Scheduler::UpdateProcessor(Processor* processor) {
+		//currently running process is not null, check for completion
+		Process* runningProc = processor->GetRunningProcess();
+		if (runningProc != 0) {
+			runningProc->Tick();
+
+			//decrement timer by 1 tick
+			processor->DecrementTimer();
+
+			//check if proc has finished executing
+			if (runningProc->IsDone()) {
+				processor->TerminateRunningProcess();
+			}
+			else if (runningProc->HasIOEvent(m_SimulationInfo.GetTimestep())) { //check for IO
+				//block process
+				processor->BlockRunningProcess();
+			}
+		}
+
+		//get running process again incase of change
+		//run schedule algo incase of process null
+		if (processor->GetRunningProcess() == 0) {
+			processor->ScheduleAlgo();
+		}
+
+		//kill random proc in RDY
+		if (processor->GetProcessorType() == ProcessorType::FCFS) {
+			ProcessorFCFS* fcfs = (ProcessorFCFS*)processor;
+			fcfs->KillRandomProcess();
+
+			//process sigkill for FCFS
+			SigkillTimeInfo sigkill;
+			if (m_Sigkills.Peek(&sigkill) && sigkill.time == m_SimulationInfo.GetTimestep()) {
+				//dequeue sigkill
+				m_Sigkills.Dequeue();
+
+				//process it
+				fcfs->ProcessSigkill(sigkill.proc_pid);
+			}
+		}
+	}
+
 	LoadFileInfo* Scheduler::GetLoadFileInfo() {
 		return &m_LoadFileInfo;
 	}
@@ -63,11 +136,52 @@ namespace core {
 
 		//update processors
 		for (int i = 0; i < m_Processors.GetLength(); i++) {
-			(*m_Processors[i])->ScheduleAlgo(this);
+			Processor* processor = *m_Processors[i];
+			UpdateProcessor(processor);
+
+			Process* proc = processor->GetRunningProcess();
+			if (proc != 0) {
+				int num = RandomEngine::GetInt(1, 100);
+				if (num >= 1 && num <= 15) {
+					//move to BLK
+					//proc must have io data
+					if (proc->HasAnyIOEvent()) {
+						processor->BlockRunningProcess();
+					}
+				}
+				else if (num >= 20 && num <= 30) {
+					//move to RDY
+					processor->ReqeueueRunningProcess();
+				}
+				else if (num >= 50 && num <= 60) {
+					processor->TerminateRunningProcess();
+				}
+			}
 		}
+
+		Process* blkTopProc = 0;
+		if (m_BlockedProcesses.Peek(&blkTopProc)) {
+			if (RandomEngine::GetInt(1, 100) < 10) {
+				//dequeue from BLK
+				m_BlockedProcesses.Dequeue();
+
+				//reschedule
+				Schedule(blkTopProc);
+			}
+		}
+
+		//update io
+		UpdateIO();
 
 		//mark updated
 		m_SimulationInfo.NotifyUpdated();
+
+		//check if simulation has ended
+		if (m_TerminatedProcesses.GetLength() == m_LoadFileInfo.proc_count) {
+			//done, stop the simulation
+			m_SimulationInfo.Stop();
+			m_View.NotifyStopped();
+		}
 	}
 
 	void Scheduler::Schedule(Process* proc) {
@@ -102,16 +216,29 @@ namespace core {
 			}
 
 			//create processors
-			//only fcfs for now
 			for (int i = 0; i < data.num_processors_fcfs; i++) {
-				m_Processors.Add(new ProcessorFCFS());
+				m_Processors.Add(new ProcessorFCFS(this));
+			}
+
+			for (int i = 0; i < data.num_processors_sjf; i++) {
+				m_Processors.Add(new ProcessorSJF(this));
+			}
+
+			for (int i = 0; i < data.num_processors_rr; i++) {
+				m_Processors.Add(new ProcessorRR(this));
+			}
+
+			//enqueue sigkills
+			for (int i = 0; i < deserializer.GetSigkillCount(); i++) {
+				m_Sigkills.Enqueue(data.sigkills[i]);
 			}
 		}
 		
 		//update file load info
 		m_LoadFileInfo = {
 			filename,
-			success
+			success,
+			data.proc_count
 		};
 	}
 
@@ -126,10 +253,43 @@ namespace core {
 	}
 
 	void Scheduler::Print(_STD wstringstream& stream) {
-		stream << L"Processors\n";
+		stream << L"RDY processes\n";
+
+		int runCounter = 0; //count running procs
+		for (int i = 0; i < m_Processors.GetLength(); i++) {
+			Processor* processor = *m_Processors[i];
+			processor->Print(stream);
+
+			if (processor->GetState() == ProcessorState::BUSY) {
+				runCounter++;
+			}
+		}
+
+		//BLK
+		stream << L"\nBLK processes\n";
+		stream << m_BlockedProcesses.GetLength() << L" BLK: ";
+		m_BlockedProcesses.Print(stream);
+
+		//RUN
+		stream << L"\nRUN processes\n";
+		stream << runCounter << L" RUN: ";
 
 		for (int i = 0; i < m_Processors.GetLength(); i++) {
-			(*m_Processors[i])->Print(stream);
+			Processor* processor = *m_Processors[i];
+			if (processor->GetRunningProcess() != 0) {
+				stream << processor->GetRunningProcess()->GetPID() << L"(P" << (i + 1) << L"), ";
+			}
+		}
+
+		//TRM
+		stream << L"\nTRM processes\n";
+		stream << m_TerminatedProcesses.GetLength() << L" TRM: ";
+		m_TerminatedProcesses.Print(stream);
+
+		//IO
+		stream << L"\n\nIO mutex: ";
+		if (m_IOMutex.owner != 0) {
+			stream << L"owner(" << m_IOMutex.owner->GetPID() << L") dur(" << m_IOMutex.io_data.duration << L")";
 		}
 	}
 }

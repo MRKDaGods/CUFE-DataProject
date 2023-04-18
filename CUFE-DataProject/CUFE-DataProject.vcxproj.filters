@@ -78,6 +78,18 @@
     <ClInclude Include="core\processor_fcfs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="collections\array_list.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="collections\linked_priority_queue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="core\processor_sjf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="core\processor_rr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -117,6 +129,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="core\processor_fcfs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="core\processor_sjf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="core\processor_rr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

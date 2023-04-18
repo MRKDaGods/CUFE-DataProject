@@ -1,18 +1,18 @@
 #include "CppUnitTest.h"
 
-#include "../CUFE-DataProject/collections/linked_list.h"
+#include "../CUFE-DataProject/collections/array_list.h"
 
 using namespace collections;
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace Tests
 {
-	TEST_CLASS(LinkedListTests)
+	TEST_CLASS(ArrayListTests)
 	{
 	public:
 		TEST_METHOD(Add)
 		{
-			LinkedList<int> ll;
+			ArrayList<int> ll;
 			for (int i = 0; i < 5; i++) {
 				ll.Add(i);
 			}
@@ -22,7 +22,7 @@ namespace Tests
 
 		TEST_METHOD(Insert)
 		{
-			LinkedList<int> ll;
+			ArrayList<int> ll;
 			for (int i = 0; i < 5; i++) {
 				ll.Add(i);
 			}
@@ -35,7 +35,7 @@ namespace Tests
 
 		TEST_METHOD(Remove)
 		{
-			LinkedList<int> ll;
+			ArrayList<int> ll;
 			for (int i = 0; i < 5; i++) {
 				ll.Add(i);
 			}
@@ -50,7 +50,7 @@ namespace Tests
 
 		TEST_METHOD(Empty)
 		{
-			LinkedList<int> ll;
+			ArrayList<int> ll;
 			for (int i = 0; i < 5; i++) {
 				ll.Add(i);
 			}
@@ -64,7 +64,7 @@ namespace Tests
 
 		TEST_METHOD(GetItem)
 		{
-			LinkedList<int> ll;
+			ArrayList<int> ll;
 			for (int i = 0; i < 5; i++) {
 				ll.Add(i);
 			}

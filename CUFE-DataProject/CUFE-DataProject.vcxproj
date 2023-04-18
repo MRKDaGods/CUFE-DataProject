@@ -128,7 +128,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="collections\array_list.h" />
     <ClInclude Include="collections\linked_list.h" />
+    <ClInclude Include="collections\linked_priority_queue.h" />
     <ClInclude Include="collections\linked_queue.h" />
     <ClInclude Include="collections\linked_stack.h" />
     <ClInclude Include="collections\list.h" />
@@ -139,12 +141,14 @@
     <ClInclude Include="core\process.h" />
     <ClInclude Include="core\processor.h" />
     <ClInclude Include="core\processor_fcfs.h" />
+    <ClInclude Include="core\processor_sjf.h" />
     <ClInclude Include="core\scheduler.h" />
     <ClInclude Include="core\scheduler_view.h" />
     <ClInclude Include="core\simulation_info.h" />
     <ClInclude Include="core\states.h" />
     <ClInclude Include="core\deserializer.h" />
     <ClInclude Include="core\random_engine.h" />
+    <ClInclude Include="core\processor_rr.h" />
     <ClInclude Include="ui\gui.h" />
     <ClInclude Include="ui\color.h" />
     <ClInclude Include="ui\renderer.h" />
@@ -155,11 +159,13 @@
     <ClCompile Include="core\process.cpp" />
     <ClCompile Include="core\processor.cpp" />
     <ClCompile Include="core\processor_fcfs.cpp" />
+    <ClCompile Include="core\processor_sjf.cpp" />
     <ClCompile Include="core\scheduler.cpp" />
     <ClCompile Include="core\deserializer.cpp" />
     <ClCompile Include="core\scheduler_view.cpp" />
     <ClCompile Include="core\simulation_info.cpp" />
     <ClCompile Include="core\random_engine.cpp" />
+    <ClCompile Include="core\processor_rr.cpp" />
     <ClCompile Include="ui\gui.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ui\renderer.cpp" />

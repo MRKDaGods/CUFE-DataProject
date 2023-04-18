@@ -2,7 +2,7 @@
 #include "scheduler.h"
 
 namespace core {
-	Processor::Processor(ProcessorType type) : m_Type(type), m_ConcurrentTimer(0), m_State(ProcessorState::IDLE), m_RunningProcess(0) {
+	Processor::Processor(ProcessorType type, Scheduler* scheduler) : m_Type(type), m_Scheduler(scheduler), m_ConcurrentTimer(0), m_State(ProcessorState::IDLE), m_RunningProcess(0) {
 	}
 
 	ProcessorType Processor::GetProcessorType() {
@@ -17,8 +17,25 @@ namespace core {
 		return m_State;
 	}
 
+	Process* Processor::GetRunningProcess() {
+		return m_RunningProcess;
+	}
+
 	void Processor::DecrementTimer(Process* proc) {
 		m_ConcurrentTimer -= proc != 0 ? (proc->GetCPUTime() - proc->GetTicks()) : 1;
+	}
+
+	void Processor::TerminateProcess(Process* proc) {
+		if (proc == 0) return;
+
+		//decrement timer
+		DecrementTimer(proc);
+
+		//update state to TRM
+		proc->SetState(ProcessState::TRM);
+
+		//move process to trm list
+		m_Scheduler->NotifyProcessTerminated(proc);
 	}
 
 	void Processor::RunProcess(Process* proc) {
@@ -32,17 +49,11 @@ namespace core {
 		m_State = ProcessorState::BUSY;
 	}
 
-	void Processor::TerminateRunningProcess(Scheduler* scheduler) {
+	void Processor::TerminateRunningProcess() {
 		if (m_RunningProcess == 0) return;
 
-		//decrement timer
-		DecrementTimer(m_RunningProcess);
-
-		//update state to TRM
-		m_RunningProcess->SetState(ProcessState::TRM);
-
-		//move process to trm list
-		scheduler->NotifyProcessTerminated(m_RunningProcess);
+		//terminate
+		TerminateProcess(m_RunningProcess);
 
 		//no running procs now
 		m_RunningProcess = 0;
@@ -51,7 +62,7 @@ namespace core {
 		m_State = ProcessorState::IDLE;
 	}
 
-	void Processor::BlockRunningProcess(Scheduler* scheduler) {
+	void Processor::BlockRunningProcess() {
 		if (m_RunningProcess == 0) return;
 
 		//decrement timer
@@ -61,7 +72,20 @@ namespace core {
 		m_RunningProcess->SetState(ProcessState::BLK);
 
 		//move process to trm list
-		scheduler->NotifyProcessBlocked(m_RunningProcess);
+		m_Scheduler->NotifyProcessBlocked(m_RunningProcess);
+
+		//no running procs now
+		m_RunningProcess = 0;
+
+		//update state to idle
+		m_State = ProcessorState::IDLE;
+	}
+
+	void Processor::ReqeueueRunningProcess() {
+		if (m_RunningProcess == 0) return;
+
+		//update state to RDY
+		m_RunningProcess->SetState(ProcessState::RDY);
 
 		//no running procs now
 		m_RunningProcess = 0;
@@ -72,7 +96,7 @@ namespace core {
 
 	void Processor::QueueProcess(Process* proc) {
 		//increment timer
-		m_ConcurrentTimer += proc->GetCPUTime();
+		m_ConcurrentTimer += proc->GetCPUTime() - proc->GetTicks();
 
 		//update state to RDY
 		proc->SetState(ProcessState::RDY);

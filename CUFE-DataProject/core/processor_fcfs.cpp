@@ -1,32 +1,14 @@
 #include "processor_fcfs.h"
 #include "scheduler.h"
+#include "random_engine.h"
 
 namespace core {
-	ProcessorFCFS::ProcessorFCFS() : Processor(ProcessorType::FCFS) {
+	ProcessorFCFS::ProcessorFCFS(Scheduler* scheduler) : Processor(ProcessorType::FCFS, scheduler) {
 	}
 	
-	void ProcessorFCFS::ScheduleAlgo(Scheduler* scheduler) {
-		//currently running process is not null, check for completion
-		if (m_RunningProcess != 0) {
-			m_RunningProcess->Tick();
-
-			//decrement timer by 1 tick
-			DecrementTimer();
-
-			//check if proc has finished executing
-			if (m_RunningProcess->IsDone()) {
-				TerminateRunningProcess(scheduler);
-			}
-			else if (m_RunningProcess->HasIOEvent(scheduler->GetSimulationInfo()->GetTimestep())) { //check for IO
-				//block process
-				BlockRunningProcess(scheduler);
-			}
-
-			return;
-		}
-
+	void ProcessorFCFS::ScheduleAlgo() {
 		//get process from ready
-		if (m_ReadyProcesses.GetLength() > 0) {
+		if (m_RunningProcess == 0 && m_ReadyProcesses.GetLength() > 0) {
 			//running proc should be head O(1)
 			Process* proc = *m_ReadyProcesses[0];
 
@@ -57,5 +39,41 @@ namespace core {
 
 		//terminator
 		stream << L'\n';
+	}
+
+	void ProcessorFCFS::KillRandomProcess() {
+		if (m_ReadyProcesses.GetLength() == 0) return;
+
+		int pid = RandomEngine::GetInt(1, m_Scheduler->GetLoadFileInfo()->proc_count);
+		Process* proc = m_ReadyProcesses.GetProcessWithID(pid);
+		if (proc != 0) {
+			//remove from ready
+			m_ReadyProcesses.Remove(proc);
+
+			//terminate
+			TerminateProcess(proc);
+		}
+	}
+
+	void ProcessorFCFS::ProcessSigkill(int pid) {
+		//nothing to do
+		if (m_RunningProcess == 0 && m_ReadyProcesses.GetLength() == 0) return;
+
+		//check for running proc first
+		if (m_RunningProcess != 0 && m_RunningProcess->GetPID() == pid) {
+			//terminate it
+			TerminateRunningProcess();
+			return;
+		}
+
+		//find proc in ready queue
+		Process* proc = m_ReadyProcesses.GetProcessWithID(pid);
+		if (proc != 0) {
+			//remove from ready
+			m_ReadyProcesses.Remove(proc);
+
+			//terminate
+			TerminateProcess(proc);
+		}
 	}
 }

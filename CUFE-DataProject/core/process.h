@@ -5,6 +5,7 @@
 #include "../common.h"
 #include "../collections/linked_list.h"
 #include "../collections/linked_queue.h"
+#include "../collections/linked_priority_queue.h"
 #include "states.h"
 
 namespace core {
@@ -113,6 +114,16 @@ namespace core {
 		/// Does the process have an IO event now?
 		/// </summary>
 		bool HasIOEvent(int currentTs);
+
+		/// <summary>
+		/// Does the process have any IO event?
+		/// </summary>
+		bool HasAnyIOEvent();
+
+		/// <summary>
+		/// Returns the IO data that is to be handled next, and pops it from the queue
+		/// </summary>
+		ProcessIOData GetIOData();
 	};
 }
 
@@ -120,9 +131,25 @@ namespace collections {
 	class ProcessLinkedList : public _COLLECTION LinkedList<_CORE Process*> {
 	public:
 		void Print(_STD wstringstream& stream);
+
+		/// <summary>
+		/// Returns the process with id=pid (optimized)
+		/// </summary>
+		_CORE Process* GetProcessWithID(int pid);
 	};
 
 	class ProcessLinkedQueue : public _COLLECTION LinkedQueue<_CORE Process*> {
+	public:
+		void Print(_STD wstringstream& stream);
+	};
+
+	struct ProcessPriority {
+		bool operator()(_CORE Process* p1, _CORE Process* p2) {
+			return p1->GetCPUTime() < p2->GetCPUTime();
+		}
+	};
+
+	class ProcessLinkedPriorityQueue : public _COLLECTION LinkedPriorityQueue<_CORE Process*, ProcessPriority> {
 	public:
 		void Print(_STD wstringstream& stream);
 	};

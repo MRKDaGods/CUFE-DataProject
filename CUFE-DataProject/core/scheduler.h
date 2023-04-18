@@ -10,6 +10,7 @@
 #include "process.h"
 #include "simulation_info.h"
 #include "scheduler_view.h"
+#include "deserializer.h"
 
 namespace core {
 	/// <summary>
@@ -25,6 +26,16 @@ namespace core {
 		/// Loaded successfully?
 		/// </summary>
 		bool success;
+
+		/// <summary>
+		/// Number of processes loaded
+		/// </summary>
+		int proc_count;
+	};
+
+	struct IOMutex {
+		ProcessIOData io_data;
+		Process* owner;
 	};
 
 	class Scheduler {
@@ -47,12 +58,17 @@ namespace core {
 		/// <summary>
 		/// List of TRM processes
 		/// </summary>
-		_COLLECTION LinkedList<Process*> m_TerminatedProcesses;
+		_COLLECTION ProcessLinkedList m_TerminatedProcesses;
 
 		/// <summary>
 		/// Queue of BLK processes
 		/// </summary>
 		_COLLECTION ProcessLinkedQueue m_BlockedProcesses;
+
+		/// <summary>
+		/// Queue of sigkills
+		/// </summary>
+		_COLLECTION LinkedQueue<SigkillTimeInfo> m_Sigkills;
 
 		/// <summary>
 		/// Currently loaded file info
@@ -70,10 +86,24 @@ namespace core {
 		SchedulerView m_View;
 
 		/// <summary>
+		/// An IO mutex for processes to access IO
+		/// </summary>
+		IOMutex m_IOMutex;
+
+		/// <summary>
 		/// Returns the processor with the shortest queue
 		/// </summary>
-		/// <returns></returns>
 		Processor* GetProcessorWithShortestQueue();
+
+		/// <summary>
+		/// Monitors the IO mutex
+		/// </summary>
+		void UpdateIO();
+
+		/// <summary>
+		/// Updates a processor
+		/// </summary>
+		void UpdateProcessor(Processor* processor);
 
 	public:
 		Scheduler();

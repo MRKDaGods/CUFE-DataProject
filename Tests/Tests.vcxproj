@@ -157,7 +157,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="array_list_test.cpp" />
     <ClCompile Include="linked_list_test.cpp" />
+    <ClCompile Include="linked_priority_queue_test.cpp" />
     <ClCompile Include="linked_queue_test.cpp" />
     <ClCompile Include="linked_stack_test.cpp" />
   </ItemGroup>
