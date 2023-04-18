@@ -37,6 +37,10 @@ namespace ui {
 		m_UIThreadHandle = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)UIThreadEntrypoint, this, 0, 0);
 	}
 
+	Renderer* GUI::GetRenderer() {
+		return &m_Renderer;
+	}
+
 	void GUI::DrawString(_UTIL Vector2 pos, _STD wstring text, Color color) {
 		DrawString((int)pos.x, (int)pos.y, text, color);
 	}
@@ -64,9 +68,36 @@ namespace ui {
 		}
 	}
 
-	bool GUI::DrawButton(int x, int y, int w, int h, _STD wstring text, Color color) {
-		//width is min of text length w/padding or supplied width
-		w = min(w, text.length() + 3);
+	void GUI::DrawLine(int x1, int y1, int x2, int y2, Color color, wchar_t ch) {
+		DrawLine(_UTIL Vector2(x1, y1), _UTIL Vector2(x2, y2), color, ch);
+	}
+
+	void GUI::DrawBox(int x, int y, int w, int h, Color color, wchar_t wchar, wchar_t vchar, const wchar_t* corners) {
+		DrawLine(x, y, x + w, y, color, wchar);
+		DrawLine(x, y + h, x + w - 1, y + h, color, wchar);
+
+		DrawLine(x, y - 1, x, y + h, color, vchar);
+		DrawLine(x + w, y - 1, x + w, y + h, color, vchar);
+
+		m_Renderer.SetPixel(x, y, corners[0], color);
+		m_Renderer.SetPixel(x + w, y, corners[1], color);
+		m_Renderer.SetPixel(x, y + h, corners[2], color);
+		m_Renderer.SetPixel(x + w, y + h, corners[3], color);
+	}
+
+	void GUI::DrawBoxFilled(int x, int y, int w, int h, Color color) {
+		for (int i = x; i < x + w; i++) {
+			for (int j = y; j < y + h; j++) {
+				m_Renderer.SetPixel(i, j, L' ', color);
+			}
+		}
+	}
+
+	bool GUI::DrawButton(int x, int y, int w, int h, _STD wstring text, Color color, bool useMinWidth) {
+		if (useMinWidth) {
+			//width is min of text length w/padding or supplied width
+			w = (int)min(w, text.length() + 3);
+		}
 
 		//is button clicked?
 		bool buttonDown = m_Renderer.IsMouseDown(0, x, y, w, h);
@@ -78,11 +109,7 @@ namespace ui {
 		}
 		
 		//render button itself
-		DrawLine(_UTIL Vector2(x, y), _UTIL Vector2(x + w, y), color, L'.');
-		DrawLine(_UTIL Vector2(x, y + h), _UTIL Vector2(x + w, y + h), color, L'.');
-
-		DrawLine(_UTIL Vector2(x, y - 1), _UTIL Vector2(x, y + h), color, L'.');
-		DrawLine(_UTIL Vector2(x + w, y), _UTIL Vector2(x + w, y + h), color, L'.');
+		DrawBox(x, y, w, h, color);
 
 		//render text centered
 		int textX = (int)_STD round(x + w / 2.f - text.length() / 2.f);
@@ -92,30 +119,23 @@ namespace ui {
 		return buttonDown;
 	}
 
-	float t = 0;
+	void GUI::DrawTextbox(int x, int y, int w, int h, _STD wstring& text, Color color) {
+		//simply draw a button, and alter its text
 
-	void GUI::draw(int x, int y, int w, int h) {
-		//DrawLine(_UTIL Vector2(x, y + h / 2.f), _UTIL Vector2(x + w, y + h / 2.f), ui::COLOR_FG_WHITE, L'.');
+		//check if we're focused
+		RECT tbRect = {
+			x, y, x + w, y + h
+		};
 
-		//DrawLine(_UTIL Vector2(x + w / 2.f, y), _UTIL Vector2(x + w / 2.f, y + h), ui::COLOR_FG_WHITE, L'.');
+		_UTIL Vector2 lastDownPos = m_Renderer.GetLastMouseDownPos();
+		bool acceptInput = PtInRect(&tbRect, { (LONG)lastDownPos.x, (LONG)lastDownPos.y });
 
-		float angle = M_PI * 5;
-		for (float i = 0; i <= angle; i += angle / 100.f) {
-			float c = 10 * cosf(i + t);
-
-			auto sz = _UTIL Vector2(w, h);
-			m_Renderer.SetPixel(x + i * 8, y + sz.y / 2.f - c, 0x2588, ui::COLOR_FG_MAGENTA | _UI COLOR_BG_WHITE);
-
-			float s = 10 * sinf(i + t);
-			m_Renderer.SetPixel(x + i * 8, y + sz.y / 2.f - s, 0x2588, ui::COLOR_FG_BLACK | _UI COLOR_BG_WHITE);
-
-			if (c == 0.f) {
-				c = 0.0001f;
-			}
-
-			auto t = s / c;
-			//m_Renderer.SetPixel(i * 10, sz.y / 2.f - t, 0x2588, ui::COLOR_FG_YELLOW);
+		if (acceptInput) {
+			m_Renderer.UpdateTextBuffer(text);
 		}
+
+		//the button
+		DrawButton(x, y, w, h, text.size() == 0 ? L"..." : text, color, false);
 	}
 
 	void GUI::UIRenderLoop() {
@@ -131,6 +151,9 @@ namespace ui {
 
 			float fps = 1.f / elapsed;
 
+			//update input
+			m_Renderer.UpdateInput();
+
 			//start rendering
 
 			//clear screen
@@ -140,10 +163,6 @@ namespace ui {
 			if (m_ExternalCallback != 0) {
 				m_ExternalCallback();
 			}
-
-			t += 0.05;
-
-			draw(60, 2, 10, 30);
 
 			//update title w/fps
 			char title[256];

@@ -9,7 +9,7 @@ namespace collections {
 	/// </summary>
 	template<typename T>
 	class LinkedQueue : public Queue<T> {
-	private:
+	protected:
 		/// <summary>
 		/// The underlying linked list
 		/// </summary>

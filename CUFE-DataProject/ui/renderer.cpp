@@ -3,7 +3,10 @@
 #include <Windows.h>
 
 namespace ui {
-	Renderer::Renderer() : m_StdOutHandle(0), m_ScreenBuffer(0), m_ScreenBufferSize(0) {
+	Renderer::Renderer() : m_StdInHandle(0), m_StdOutHandle(0), m_ScreenBuffer(0), m_ScreenBufferSize(0) {
+		//allocate 32 input records
+		m_InputState.records = new INPUT_RECORD[32];
+		memset(m_InputState.records, 0, sizeof(INPUT_RECORD) * 32);
 	}
 
 	Renderer::~Renderer() {
@@ -11,6 +14,8 @@ namespace ui {
 		if (m_ScreenBuffer != 0) {
 			delete[] m_ScreenBuffer;
 		}
+
+		delete[] m_InputState.records;
 	}
 
 	void Renderer::Initialize(const char* title, _UTIL Vector2 screenSize) {
@@ -98,36 +103,80 @@ namespace ui {
 		return m_StdInHandle;
 	}
 
-	bool Renderer::IsMouseDown(int button, int x, int y, int w, int h) {
+	_UTIL Vector2 Renderer::GetLastMouseDownPos() {
+		return m_LastMouseDownPos;
+	}
+
+	void Renderer::UpdateInput() {
 		//read mouse input
-		DWORD evtCount;
-		GetNumberOfConsoleInputEvents(m_StdInHandle, &evtCount);
+		GetNumberOfConsoleInputEvents(m_StdInHandle, &m_InputState.evt_count);
 
-		//if there are no input events, return false
-		if (evtCount == 0) {
-			return false;
+		if (m_InputState.evt_count > 0) {
+			ReadConsoleInput(m_StdInHandle, m_InputState.records, m_InputState.evt_count, &m_InputState.evt_count);
+
+			//read mouse down pos
+			IsMouseDown(0, 0, 0, VEC_INT_X(m_ScreenSize), VEC_INT_Y(m_ScreenSize), &m_LastMouseDownPos);
 		}
+	}
 
-		INPUT_RECORD buf[32];
-		ReadConsoleInput(m_StdInHandle, buf, evtCount, &evtCount);
+	bool Renderer::IsMouseDown(int button, int x, int y, int w, int h, _UTIL Vector2* mousePos) {
+		//no events?
+		if (m_InputState.evt_count == 0) return false;
 
-		for (DWORD i = 0; i < evtCount; i++) {
+		for (DWORD i = 0; i < m_InputState.evt_count; i++) {
 			//only check for mouse down event
-			INPUT_RECORD evt = buf[i];
+			INPUT_RECORD evt = m_InputState.records[i];
 			if (evt.EventType == MOUSE_EVENT) {
 				if (evt.Event.MouseEvent.dwEventFlags == 0) {
 					RECT buttonRect = {
 						x, y, x + w, y + h
 					};
 
-					COORD mousePos = evt.Event.MouseEvent.dwMousePosition;
+					COORD pos = evt.Event.MouseEvent.dwMousePosition;
 
 					int buttonMask = 1 << button;
-					return (evt.Event.MouseEvent.dwButtonState & buttonMask) > 0 && PtInRect(&buttonRect, POINT{ mousePos.X, mousePos.Y });
+					bool hitTest = (evt.Event.MouseEvent.dwButtonState & buttonMask) > 0 && PtInRect(&buttonRect, POINT{ pos.X, pos.Y });
+
+					if (hitTest && mousePos != 0) {
+						*mousePos = _UTIL Vector2(pos.X, pos.Y);
+					}
+
+					return hitTest;
 				}
 			}
 		}
 
 		return false;
+	}
+
+	void Renderer::UpdateTextBuffer(_STD wstring& buffer) {
+		//no events?
+		if (m_InputState.evt_count == 0) return;
+
+		for (DWORD i = 0; i < m_InputState.evt_count; i++) {
+			//only check for mouse down event
+			INPUT_RECORD evt = m_InputState.records[i];
+			if (evt.EventType == KEY_EVENT) {
+				//make sure key down
+				KEY_EVENT_RECORD keyEvt = evt.Event.KeyEvent;
+				if (keyEvt.bKeyDown) {
+					//check for backspace
+					if (keyEvt.wVirtualKeyCode == VK_BACK) {
+						//remove last char
+						if (buffer.size() > 0) {
+							buffer = buffer.substr(0, buffer.size() - 1);
+						}
+
+						return;
+					}
+
+					//add char code
+					wchar_t ch = keyEvt.uChar.UnicodeChar;
+					if (ch != L'\0') {
+						buffer += keyEvt.uChar.UnicodeChar;
+					}
+				}
+			}
+		}
 	}
 }

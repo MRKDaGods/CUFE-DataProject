@@ -1,7 +1,7 @@
 #include "deserializer.h"
 
 namespace core {
-    Deserializer::Deserializer(_STD string path) : m_Processes(0), m_Sigkills(0), m_SigkillCount(0) {
+    Deserializer::Deserializer(_STD wstring& path) : m_Processes(0), m_Sigkills(0), m_SigkillCount(0) {
         m_Stream.open(path, _STD ios::in);
     }
 

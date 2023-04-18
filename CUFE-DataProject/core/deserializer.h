@@ -68,7 +68,7 @@ namespace core {
 		int m_SigkillCount;
 
 	public:
-		Deserializer(_STD string path);
+		Deserializer(_STD wstring& path);
 		~Deserializer();
 
 		/// <summary>

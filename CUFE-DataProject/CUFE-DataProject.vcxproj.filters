@@ -63,6 +63,21 @@
     <ClInclude Include="core\deserializer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="core\simulation_info.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="core\scheduler_view.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="core\input_generator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="core\random_engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="core\processor_fcfs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -87,6 +102,21 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="core\deserializer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="core\scheduler_view.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="core\simulation_info.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="core\input_generator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="core\random_engine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="core\processor_fcfs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

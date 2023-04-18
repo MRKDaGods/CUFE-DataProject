@@ -32,7 +32,7 @@ namespace collections {
 
 	template<typename T>
 	class LinkedList : public List<T> {
-	private:
+	protected:
 		/// <summary>
 		/// Linked list head
 		/// </summary>

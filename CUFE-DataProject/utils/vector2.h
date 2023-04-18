@@ -1,5 +1,8 @@
 #pragma once
 
+#define VEC_INT_X(v) ((int)v.x)
+#define VEC_INT_Y(v) ((int)v.y)
+
 namespace utils {
 	/// <summary>
 	/// Represents a 2D vector
@@ -24,6 +27,11 @@ namespace utils {
 		/// Initialize the vector with the provided values
 		/// </summary>
 		Vector2(float x, float y);
+
+		/// <summary>
+		/// Initialize the vector with the provided values
+		/// </summary>
+		Vector2(int x, int y);
 
 		/// <summary>
 		/// Returns the magnitude of the vector

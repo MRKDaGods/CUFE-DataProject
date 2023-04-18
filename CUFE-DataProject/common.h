@@ -3,6 +3,12 @@
 #define _UTIL ::utils::
 #define _UI ::ui::
 #define _COLLECTION ::collections::
+#define _CORE ::core::
+
+#ifndef _STD
+#define _STD ::std::
+#endif
+
 
 //typedefs
 typedef unsigned int uint32_t;

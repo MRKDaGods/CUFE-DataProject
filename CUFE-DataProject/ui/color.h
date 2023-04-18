@@ -1,5 +1,11 @@
 #pragma once
 
+#include <initializer_list>
+
+#define COL_FG(name) _UI COLOR_FG_##name
+#define COL_BG(name) _UI COLOR_BG_##name
+#define COLS(...) _UI CombineColors({##__VA_ARGS__})
+
 namespace ui {
 	enum Color {
 		COLOR_FG_BLACK = 0x0000,
@@ -43,7 +49,29 @@ namespace ui {
 		return (Color)((int)left | (int)right);
 	}
 
+	/// <summary>
+	/// Bitwise xor operator
+	/// </summary>
 	inline Color operator^(Color left, int right) {
 		return (Color)((int)left ^ right);
+	}
+
+	/// <summary>
+	/// Right bitshift operator (convert BG to FG)
+	/// </summary>
+	inline Color operator>>(Color col, int shift) {
+		return (Color)((int)col >> shift);
+	}
+
+	/// <summary>
+	/// Adds a couple colors together
+	/// </summary>
+	inline Color CombineColors(_STD initializer_list<Color> colors) {
+		Color cur = COLOR_FG_BLACK;
+		for (auto&& c : colors) {
+			cur = cur | c;
+		}
+
+		return cur;
 	}
 }

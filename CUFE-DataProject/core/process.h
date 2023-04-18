@@ -1,8 +1,11 @@
 #pragma once
 
+#include <sstream>
+
 #include "../common.h"
-#include "states.h"
+#include "../collections/linked_list.h"
 #include "../collections/linked_queue.h"
+#include "states.h"
 
 namespace core {
 	/// <summary>
@@ -37,6 +40,11 @@ namespace core {
 		int m_TerminationTime; // TT
 
 		/// <summary>
+		/// Realtime execution timer
+		/// </summary>
+		int m_Ticks;
+
+		/// <summary>
 		/// Current process state
 		/// </summary>
 		ProcessState m_State;
@@ -46,8 +54,25 @@ namespace core {
 		/// </summary>
 		_COLLECTION LinkedQueue<ProcessIOData> m_IODataQueue;
 
+		friend _STD wstringstream& operator<<(_STD wstringstream& stream, Process* proc);
+
 	public:
 		Process(int pid, int at, int ct, ProcessIOData* ioData = 0, int ioDataSz = 0);
+
+		/// <summary>
+		/// Returns the process id
+		/// </summary>
+		int GetPID();
+
+		/// <summary>
+		/// (AT) Returns the arrival time
+		/// </summary>
+		int GetArrivalTime();
+
+		/// <summary>
+		/// (CT) Returns the CpuTime
+		/// </summary>
+		int GetCPUTime();
 
 		/// <summary>
 		/// (TRT) Total time a proc spends in the system from its arrival to its termination
@@ -58,5 +83,47 @@ namespace core {
 		/// (WT) Total time a proc spends in the system not being executed by the CPU
 		/// </summary>
 		int GetWaitingTime();
+
+		/// <summary>
+		/// Returns the total process ticks
+		/// </summary>
+		int GetTicks();
+
+		/// <summary>
+		/// Returns the current process state
+		/// </summary>
+		ProcessState GetState();
+
+		/// <summary>
+		/// Updates the process state
+		/// </summary>
+		void SetState(ProcessState state);
+
+		/// <summary>
+		/// Increments the ticks
+		/// </summary>
+		void Tick();
+
+		/// <summary>
+		/// Has the process finished executing?
+		/// </summary>
+		bool IsDone();
+
+		/// <summary>
+		/// Does the process have an IO event now?
+		/// </summary>
+		bool HasIOEvent(int currentTs);
+	};
+}
+
+namespace collections {
+	class ProcessLinkedList : public _COLLECTION LinkedList<_CORE Process*> {
+	public:
+		void Print(_STD wstringstream& stream);
+	};
+
+	class ProcessLinkedQueue : public _COLLECTION LinkedQueue<_CORE Process*> {
+	public:
+		void Print(_STD wstringstream& stream);
 	};
 }
