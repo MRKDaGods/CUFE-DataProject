@@ -13,7 +13,7 @@ namespace collections {
 		T* m_Buffer;
 
 		void UpdateAllocations(int capacity) {
-			if (m_Capacity == capacity) return;
+			if (m_Capacity == capacity || capacity < m_Capacity) return;
 
 			T* buf = new T[capacity];
 			memset(buf, 0, sizeof(T) * capacity);
@@ -147,6 +147,13 @@ namespace collections {
 			if (idx >= m_Count || idx < 0) return 0;
 
 			return &(m_Buffer[idx]);
+		}
+
+		/// <summary>
+		/// Reserves memory in the array
+		/// </summary>
+		void Reserve(int capacity) {
+			UpdateAllocations(capacity);
 		}
 	};
 }

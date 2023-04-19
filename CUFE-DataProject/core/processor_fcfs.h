@@ -26,5 +26,10 @@ namespace core {
 		/// Processes a sigkill
 		/// </summary>
 		void ProcessSigkill(int pid);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		virtual void ReqeueueRunningProcess() override;
 	};
 }

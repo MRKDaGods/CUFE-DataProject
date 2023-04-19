@@ -1,10 +1,8 @@
 #include "process.h"
 
-#include <concurrent_priority_queue.h>
-
 namespace core {
 	Process::Process(int pid, int at, int ct, ProcessIOData* ioData, int ioDataSz) : m_PID(pid), m_ArrivalTime(at), m_CpuTime(ct), m_ResponseTime(0), m_TerminationTime(0),
-		m_Ticks(0), m_State(ProcessState::NEW) {
+		m_Ticks(0), m_State(ProcessState::NEW), m_ChildProcess(0) {
 		//check for and enqueue io data
 		if (ioData != 0 && ioDataSz > 0) {
 			for (int i = 0; i < ioDataSz; i++) {

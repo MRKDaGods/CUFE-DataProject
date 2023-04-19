@@ -13,6 +13,8 @@ int main() {
 
 	Scheduler sched;
 
+	LOG(L"Initializing...");
+
 	while (true) {
 		if (sched.GetSimulationInfo()->CanUpdateScheduler()) {
 			sched.Update();

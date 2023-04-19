@@ -70,7 +70,7 @@ namespace ui {
 	void Renderer::Clear() {
 		for (uint32_t i = 0; i < m_ScreenBufferSize; i++) {
 			m_ScreenBuffer[i].Char.UnicodeChar = L'\x20';
-			m_ScreenBuffer[i].Attributes = COLOR_BG_WHITE;
+			m_ScreenBuffer[i].Attributes = COLOR_BG_BLACK;
 		}
 	}
 

@@ -104,7 +104,7 @@ namespace core {
 		/// <summary>
 		/// Puts back the currently running process in the RDY queue
 		/// </summary>
-		void ReqeueueRunningProcess();
+		virtual void ReqeueueRunningProcess();
 
 		/// <summary>
 		/// Prints processor data into stream
@@ -115,7 +115,7 @@ namespace core {
 	/// <summary>
 	/// Converts ProcessorType to a wide string
 	/// </summary>
-	_STD wstring ProcessorTypeToWString(ProcessorType& type);
+	_STD wstring ProcessorTypeToWString(ProcessorType type);
 
 	/// <summary>
 	/// Converts ProcesserState to a wide string

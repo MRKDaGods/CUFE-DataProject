@@ -106,7 +106,7 @@ namespace core {
 		stream << L"[" << ProcessorStateToWString(m_State) << L"] Processor (" << ProcessorTypeToWString(m_Type) << L") [" << m_ConcurrentTimer << L"]: ";
 	}
 
-	_STD wstring ProcessorTypeToWString(ProcessorType& type) {
+	_STD wstring ProcessorTypeToWString(ProcessorType type) {
 		switch (type) {
 		case ProcessorType::FCFS:
 			return L"FCFS";

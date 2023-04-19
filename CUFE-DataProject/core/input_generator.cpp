@@ -1,5 +1,6 @@
 #include "input_generator.h"
 #include "random_engine.h"
+#include "logger.h"
 
 #include <iostream>
 #include <fstream>
@@ -8,6 +9,8 @@
 
 namespace core {
 	void GenerateInputFile(InputFileModel* model) {
+		LOG(L"Generating input file...");
+
 		//parse model
 		int procCount = _STD stoi(model->proc_count);
 
@@ -95,5 +98,7 @@ namespace core {
 		}
 
 		file.close();
+
+		LOG(L"Done");
 	}
 }

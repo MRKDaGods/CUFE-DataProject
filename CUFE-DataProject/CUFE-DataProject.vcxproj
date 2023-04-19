@@ -149,6 +149,7 @@
     <ClInclude Include="core\deserializer.h" />
     <ClInclude Include="core\random_engine.h" />
     <ClInclude Include="core\processor_rr.h" />
+    <ClInclude Include="core\logger.h" />
     <ClInclude Include="ui\gui.h" />
     <ClInclude Include="ui\color.h" />
     <ClInclude Include="ui\renderer.h" />
@@ -166,6 +167,7 @@
     <ClCompile Include="core\simulation_info.cpp" />
     <ClCompile Include="core\random_engine.cpp" />
     <ClCompile Include="core\processor_rr.cpp" />
+    <ClCompile Include="core\logger.cpp" />
     <ClCompile Include="ui\gui.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ui\renderer.cpp" />

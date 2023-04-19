@@ -50,6 +50,11 @@ namespace core {
 		_STD wstring m_InputFileName;
 
 		/// <summary>
+		/// Are we displaying the logs?
+		/// </summary>
+		bool m_ShowingLogs;
+
+		/// <summary>
 		/// Renders play/pause/stop actions
 		/// </summary>
 		void RenderActionsToolbar();
@@ -74,7 +79,15 @@ namespace core {
 		/// </summary>
 		void RenderLoadedInputFileInfo();
 
+		/// <summary>
+		/// Renders the processors data
+		/// </summary>
 		void RenderProcessorData();
+
+		/// <summary>
+		/// Renders the logs
+		/// </summary>
+		void RenderLogs();
 
 		/// <summary>
 		/// Handles a certain toolbar action

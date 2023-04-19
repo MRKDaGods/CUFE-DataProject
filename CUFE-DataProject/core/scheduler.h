@@ -1,16 +1,18 @@
 #pragma once
 
-#include <string>
-
 #include "../common.h"
 #include "../ui/gui.h"
 #include "../collections/linked_list.h"
+#include "../collections/array_list.h"
 #include "../collections/linked_queue.h"
 #include "processor.h"
 #include "process.h"
 #include "simulation_info.h"
 #include "scheduler_view.h"
 #include "deserializer.h"
+#include "logger.h"
+
+#include <string>
 
 namespace core {
 	/// <summary>
@@ -48,7 +50,7 @@ namespace core {
 		/// <summary>
 		/// List of available processors
 		/// </summary>
-		_COLLECTION LinkedList<Processor*> m_Processors;
+		_COLLECTION ArrayList<Processor*> m_Processors;
 
 		/// <summary>
 		/// Queue of NEW processes
@@ -56,9 +58,9 @@ namespace core {
 		_COLLECTION LinkedQueue<Process*> m_NewProcesses;
 
 		/// <summary>
-		/// List of TRM processes
+		/// List of TRM process pids
 		/// </summary>
-		_COLLECTION ProcessLinkedList m_TerminatedProcesses;
+		_COLLECTION LinkedList<int> m_TerminatedProcesses;
 
 		/// <summary>
 		/// Queue of BLK processes
@@ -89,6 +91,11 @@ namespace core {
 		/// An IO mutex for processes to access IO
 		/// </summary>
 		IOMutex m_IOMutex;
+
+		/// <summary>
+		/// A general purpose logger, singleton lifetime is tied to Scheduler
+		/// </summary>
+		Logger m_Logger;
 
 		/// <summary>
 		/// Returns the processor with the shortest queue

@@ -1,12 +1,12 @@
 #pragma once
 
-#include <sstream>
-
 #include "../common.h"
 #include "../collections/linked_list.h"
 #include "../collections/linked_queue.h"
 #include "../collections/linked_priority_queue.h"
 #include "states.h"
+
+#include <sstream>
 
 namespace core {
 	/// <summary>
@@ -54,6 +54,11 @@ namespace core {
 		/// IO data qeueue
 		/// </summary>
 		_COLLECTION LinkedQueue<ProcessIOData> m_IODataQueue;
+
+		/// <summary>
+		/// Process child
+		/// </summary>
+		Process* m_ChildProcess;
 
 		friend _STD wstringstream& operator<<(_STD wstringstream& stream, Process* proc);
 

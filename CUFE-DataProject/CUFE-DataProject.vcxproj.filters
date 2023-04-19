@@ -90,6 +90,9 @@
     <ClInclude Include="core\processor_rr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="core\logger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -135,6 +138,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="core\processor_rr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="core\logger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

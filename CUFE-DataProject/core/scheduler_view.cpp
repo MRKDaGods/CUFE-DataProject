@@ -5,7 +5,7 @@
 
 namespace core {
 	SchedulerView::SchedulerView(Scheduler* scheduler, _UI GUI* ui) : m_Scheduler(scheduler), m_UI(ui), m_ToolbarColor(COL_BG(DARK_RED)), m_ShowingSimModeSelector(false),
-		m_ShowingInputGenDialog(false), m_IsPickingInputFile(false) {
+		m_ShowingInputGenDialog(false), m_IsPickingInputFile(false), m_ShowingLogs(true) {
 	}
 
 	void SchedulerView::RenderActionsToolbar() {
@@ -54,7 +54,7 @@ namespace core {
 		//render mode selector
 		SimulationMode curMode = m_Scheduler->GetSimulationInfo()->GetMode();
 		_STD wstring modeStr = SimulationModeToWString(curMode) + (m_ShowingSimModeSelector ? L" ▼ " : L" » ");
-		if (m_UI->DrawButton(screenSize.x - modeStr.size() - 2, by + bh + 1, modeStr.size() + 1, 2, modeStr, COLS(COL_BG(WHITE), COL_FG(BLACK)))) {
+		if (m_UI->DrawButton(screenSize.x - modeStr.size() - 2, by + bh + 1, modeStr.size() + 1, 2, modeStr, COLS(COL_BG(BLACK), COL_FG(WHITE)))) {
 			m_ShowingSimModeSelector = !m_ShowingSimModeSelector;
 		}
 
@@ -64,7 +64,7 @@ namespace core {
 				bool selected = curMode == mode;
 
 				//invert color if selected
-				_UI Color col = COLS(COL_BG(WHITE), COL_FG(BLACK));
+				_UI Color col = COLS(COL_BG(BLACK), COL_FG(WHITE));
 				if (selected) {
 					col = col ^ 0xff;
 				}
@@ -124,7 +124,8 @@ namespace core {
 		//menu buttons
 		int loadFileWidth = 16;
 		int inputGenWidth = 16;
-		int totalPadding = 1; //buttonCount - 1
+		int logsWidth = 5;
+		int totalPadding = 2; //buttonCount - 1
 
 		int totalWidth = inputGenWidth + loadFileWidth + totalPadding;
 
@@ -138,6 +139,11 @@ namespace core {
 		//render test input file
 		if (m_UI->DrawButton(x, 0, inputGenWidth, 2, L"INPUT GENERATOR", COLS(COL_BG(BLACK), COL_FG(CYAN)))) {
 			m_ShowingInputGenDialog = !m_ShowingInputGenDialog;
+		}
+		x += inputGenWidth + 1;
+
+		if (m_UI->DrawButton(x, 0, logsWidth, 2, L"LOGS", COLS(COL_BG(BLACK), COL_FG(CYAN)))) {
+			m_ShowingLogs = !m_ShowingLogs;
 		}
 
 		//render input file info
@@ -284,9 +290,57 @@ namespace core {
 		_STD wstringstream stream;
 		m_Scheduler->Print(stream);
 
+		_UTIL Vector2 screenSize = m_UI->GetRenderer()->GetScreenSize();
+
+		int w = m_ShowingLogs ? VEC_INT_X(screenSize) - LOG_WIDTH - 2 : VEC_INT_X(screenSize) - 18;
+		int y = TOOLBAR_HEIGHT + 2;
+		int h = 52;
+		m_UI->DrawBoxFilled(0, y, w, h, COLS(COL_BG(BLACK), COL_FG(WHITE)));
+		m_UI->DrawBox(0, y, w, h, COLS(COL_BG(BLACK), COL_FG(WHITE)));
+
+		y += 2;
+
+		int maxW = w - 5;
 		_STD wstring str;
 		for (int i = 0; _STD getline(stream, str, L'\n'); i++) {
-			m_UI->DrawString(0, 30 + i, str, COLS(COL_BG(WHITE), COL_FG(BLACK)));
+			while (str.size() > maxW) {
+				auto s1 = str.substr(0, maxW);
+				str = str.substr(maxW);
+				m_UI->DrawString(w / 2.f - s1.size() / 2.f, y + i, s1, COLS(COL_BG(BLACK), COL_FG(YELLOW)));
+				i++;
+			}
+
+			if (str.size() > 0) {
+				m_UI->DrawString(w / 2.f - str.size() / 2.f, y + i, str, COLS(COL_BG(BLACK), COL_FG(YELLOW)));
+			}
+		}
+
+		if (m_UI->DrawButton(w - 20, y + h - 5, 19, 2, L"Advance timestep", COLS(COL_BG(BLACK), COL_FG(BLUE)))) {
+			m_Scheduler->IncrementTimestep();
+		}
+
+		wchar_t curTimestepBuf[100];
+		swprintf(curTimestepBuf, L"Current Timestep: %d", m_Scheduler->GetSimulationInfo()->GetTimestep());
+		int len = _STD wcslen(curTimestepBuf);
+		m_UI->DrawString(w - len - 1, y + h - 6, curTimestepBuf, COLS(COL_BG(BLACK), COL_FG(CYAN)));
+	}
+
+	void SchedulerView::RenderLogs() {
+		_UTIL Vector2 screenSize = m_UI->GetRenderer()->GetScreenSize();
+
+		int x = VEC_INT_X(screenSize) - LOG_WIDTH;
+
+		_COLLECTION LinkedList<_STD wstring>* logs = Logger::GetInstance()->GetLogs();
+
+		int h = logs->GetLength();
+		int y = VEC_INT_Y(screenSize) - h - 1;
+
+		//bg
+		m_UI->DrawBoxFilled(x, y, LOG_WIDTH, h, COL_BG(BLACK));
+
+		//manual traversal (performance)
+		for (_COLLECTION LinkedListNode<_STD wstring>* node = logs->GetHead(); node; node = node->next) {
+			m_UI->DrawString(x, y++, node->value, COLS(COL_BG(BLACK), COL_FG(GREEN)));
 		}
 	}
 
@@ -316,20 +370,16 @@ namespace core {
 	}
 
 	void SchedulerView::UICallback() {
-		if (m_UI->DrawButton(20, 10, 20, 4, L"Advance timestep", _UI COLOR_FG_BLACK | _UI COLOR_BG_WHITE)) {
-			m_Scheduler->IncrementTimestep();
-		}
+		RenderProcessorData();
 
-		wchar_t curTimestepBuf[100];
-		swprintf(curTimestepBuf, L"Current Timestep: %d", m_Scheduler->GetSimulationInfo()->GetTimestep());
-		m_UI->DrawString(0, 7, curTimestepBuf, _UI COLOR_FG_BLACK | _UI COLOR_BG_WHITE);
+		if (m_ShowingLogs) {
+			RenderLogs();
+		}
 
 		//test input dialog
 		if (m_ShowingInputGenDialog) {
 			RenderTestInputDialog();
 		}
-
-		RenderProcessorData();
 
 		//keep these last, Z-index order
 		RenderMenu();
