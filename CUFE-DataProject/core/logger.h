@@ -2,20 +2,31 @@
 
 #include "../collections/linked_list.h"
 #include "../common.h"
+#include "../ui/color.h"
 
 #include <string>
 
 #define LOG(msg) core::Logger::GetInstance()->Log(msg)
+#define LOGF(fmt, ...) { wchar_t __tmpBuf[100]; swprintf(__tmpBuf, fmt, __VA_ARGS__); LOG(__tmpBuf); }
 
 namespace core {
 	class Scheduler;
+
+	struct LogMessage {
+		_STD wstring text;
+		_UI Color color;
+
+		bool operator==(LogMessage& other) {
+			return text == other.text && color == other.color;
+		}
+	};
 
 	class Logger {
 	private:
 		/// <summary>
 		/// List of log entries
 		/// </summary>
-		_COLLECTION LinkedList<_STD wstring>* m_Logs;
+		_COLLECTION LinkedList<LogMessage>* m_Logs;
 
 		/// <summary>
 		/// Max number of logs
@@ -28,6 +39,11 @@ namespace core {
 		Scheduler* m_Scheduler;
 
 		/// <summary>
+		/// Current log color
+		/// </summary>
+		_UI Color m_Color;
+
+		/// <summary>
 		/// Singleton instance
 		/// </summary>
 		static Logger* ms_Instance;
@@ -37,9 +53,19 @@ namespace core {
 		~Logger();
 
 		/// <summary>
+		/// Returns the singleton instance
+		/// </summary>
+		static Logger* GetInstance();
+
+		/// <summary>
 		/// Returns the logs
 		/// </summary>
-		_COLLECTION LinkedList<_STD wstring>* GetLogs();
+		_COLLECTION LinkedList<LogMessage>* GetLogs();
+
+		/// <summary>
+		/// Adds a log entry
+		/// </summary>
+		void Log(LogMessage msg);
 
 		/// <summary>
 		/// Adds a log entry
@@ -47,8 +73,8 @@ namespace core {
 		void Log(_STD wstring msg);
 
 		/// <summary>
-		/// Returns the singleton instance
+		/// Sets a global color for the following logs
 		/// </summary>
-		static Logger* GetInstance();
+		void SetColor(_UI Color color);
 	};
 }

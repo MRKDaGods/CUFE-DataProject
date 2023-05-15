@@ -330,7 +330,7 @@ namespace core {
 
 		int x = VEC_INT_X(screenSize) - LOG_WIDTH;
 
-		_COLLECTION LinkedList<_STD wstring>* logs = Logger::GetInstance()->GetLogs();
+		_COLLECTION LinkedList<LogMessage>* logs = Logger::GetInstance()->GetLogs();
 
 		int h = logs->GetLength();
 		int y = VEC_INT_Y(screenSize) - h - 1;
@@ -339,8 +339,8 @@ namespace core {
 		m_UI->DrawBoxFilled(x, y, LOG_WIDTH, h, COL_BG(BLACK));
 
 		//manual traversal (performance)
-		for (_COLLECTION LinkedListNode<_STD wstring>* node = logs->GetHead(); node; node = node->next) {
-			m_UI->DrawString(x, y++, node->value, COLS(COL_BG(BLACK), COL_FG(GREEN)));
+		for (_COLLECTION LinkedListNode<LogMessage>* node = logs->GetHead(); node; node = node->next) {
+			m_UI->DrawString(x, y++, node->value.text, node->value.color);
 		}
 	}
 

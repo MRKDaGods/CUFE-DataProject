@@ -154,7 +154,7 @@ namespace ui {
 		if (m_InputState.evt_count == 0) return;
 
 		for (DWORD i = 0; i < m_InputState.evt_count; i++) {
-			//only check for mouse down event
+			//only check for key down event
 			INPUT_RECORD evt = m_InputState.records[i];
 			if (evt.EventType == KEY_EVENT) {
 				//make sure key down

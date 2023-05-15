@@ -42,15 +42,12 @@ namespace core {
 	void Scheduler::UpdateIO() {
 		LOG(L"Updating IO...");
 
-		wchar_t buf[100];
-
 		//handle current execution
 		if (m_IOMutex.owner != 0) {
 			//decrement duration
 			m_IOMutex.io_data.duration--;
 
-			swprintf(buf, L"Mutex owner exists, pid=%d, dur=%d", m_IOMutex.owner->GetPID(), m_IOMutex.io_data.duration);
-			LOG(buf);
+			LOGF(L"Mutex owner exists, pid=%d, dur=%d", m_IOMutex.owner->GetPID(), m_IOMutex.io_data.duration);
 
 			//we have finished
 			if (m_IOMutex.io_data.duration == 0) {
@@ -74,31 +71,25 @@ namespace core {
 			if (m_BlockedProcesses.Dequeue(&m_IOMutex.owner)) {
 				m_IOMutex.io_data = m_IOMutex.owner->GetIOData();
 
-				swprintf(buf, L"Acquiring mutex, pid=%d, dur=%d", m_IOMutex.owner->GetPID(), m_IOMutex.io_data.duration);
-				LOG(buf);
+				LOGF(L"Acquiring mutex, pid=%d, dur=%d", m_IOMutex.owner->GetPID(), m_IOMutex.io_data.duration);
 			}
 		}
 	}
 
 	void Scheduler::UpdateProcessor(Processor* processor) {
-		wchar_t buf[100];
-
 		//currently running process is not null, check for completion
 		Process* runningProc = processor->GetRunningProcess();
 		if (runningProc != 0) {
 			runningProc->Tick();
 
-			swprintf(buf, L"Running proc id=%d, ticks=%d", runningProc->GetPID(), runningProc->GetTicks());
-			LOG(buf);
+			LOGF(L"Running proc id=%d, ticks=%d", runningProc->GetPID(), runningProc->GetTicks());
 
 			//decrement timer by 1 tick
 			processor->DecrementTimer();
 
-			swprintf(buf, L"Processor time left=%d", processor->GetConcurrentTimer());
-			LOG(buf);
+			LOGF(L"Processor time left=%d", processor->GetConcurrentTimer());
 
-			swprintf(buf, L"IsDone=%s, HasIOEvent=%s", BOOL_TO_WSTR(runningProc->IsDone()), BOOL_TO_WSTR(runningProc->HasIOEvent(m_SimulationInfo.GetTimestep())));
-			LOG(buf);
+			LOGF(L"IsDone=%s, HasIOEvent=%s", BOOL_TO_WSTR(runningProc->IsDone()), BOOL_TO_WSTR(runningProc->HasIOEvent(m_SimulationInfo.GetTimestep())));
 
 			//check if proc has finished executing
 			if (runningProc->IsDone()) {
@@ -134,8 +125,7 @@ namespace core {
 				//dequeue sigkill
 				m_Sigkills.Dequeue();
 
-				swprintf(buf, L"Found sigkill for proc pid=%d", sigkill.proc_pid);
-				LOG(buf);
+				LOGF(L"Found sigkill for proc pid=%d", sigkill.proc_pid);
 
 				//process it
 				fcfs->ProcessSigkill(sigkill.proc_pid);
@@ -152,35 +142,33 @@ namespace core {
 	}
 
 	void Scheduler::Update() {
+		int ts = m_SimulationInfo.GetTimestep();
+
+		Logger::GetInstance()->SetColor(ts % 2 == 0 ? COL(BLACK, WHITE) : COL(WHITE, BLACK));
+
 		LOG(L"Scheduler update started");
 
-		wchar_t buf[100];
-		swprintf(buf, L"New proc count=%d", m_NewProcesses.GetLength());
-		LOG(buf);
+		LOGF(L"New proc count=%d", m_NewProcesses.GetLength());
 
 		//get proc at current timestep
-		int ts = m_SimulationInfo.GetTimestep();
 		Process* proc = 0;
 		while (m_NewProcesses.Peek(&proc) && proc->GetArrivalTime() == ts) {
 			//dequeue the proc
 			m_NewProcesses.Dequeue();
 
-			swprintf(buf, L"Dequeued proc from NEW, pid=%d", proc->GetPID());
-			LOG(buf);
+			LOGF(L"Dequeued proc from NEW, pid=%d", proc->GetPID());
 
 			//schedule it
 			Schedule(proc);
 		}
 
-		swprintf(buf, L"Updating processors, count=%d", m_Processors.GetLength());
-		LOG(buf);
+		LOGF(L"Updating processors, count=%d", m_Processors.GetLength());
 
 		//update processors
 		for (int i = 0; i < m_Processors.GetLength(); i++) {
 			Processor* processor = *m_Processors[i];
 
-			swprintf(buf, L"Updating processor ID=%d, type=%s", i + 1, ProcessorTypeToWString(processor->GetProcessorType()).c_str());
-			LOG(buf);
+			LOGF(L"Updating processor ID=%d, type=%s", i + 1, ProcessorTypeToWString(processor->GetProcessorType()).c_str());
 
 			UpdateProcessor(processor);
 
@@ -189,8 +177,7 @@ namespace core {
 				LOG(L"Running proc exists, running probability");
 
 				int num = RandomEngine::GetInt(1, 100);
-				swprintf(buf, L"Num(1-100)=%d", num);
-				LOG(buf);
+				LOGF(L"Num(1-100)=%d", num);
 				
 				if (num >= 1 && num <= 15) {
 					LOG(L"Res=MOVE TO BLK");
@@ -273,9 +260,7 @@ namespace core {
 	}
 
 	void Scheduler::LoadSerializedData(_STD wstring& filename) {
-		wchar_t buf[100];
-		swprintf(buf, L"Loading serialized data, filename=%s", filename.c_str());
-		LOG(buf);
+		LOGF(L"Loading serialized data, filename=%s", filename.c_str());
 
 		//read input file
 		Deserializer deserializer(filename);
@@ -290,8 +275,7 @@ namespace core {
 				m_NewProcesses.Enqueue(data.procs[i]);
 			}
 
-			swprintf(buf, L"Created %d processes", data.proc_count);
-			LOG(buf);
+			LOGF(L"Created %d processes", data.proc_count);
 
 			//reserve memory
 			m_Processors.Reserve(data.num_processors_fcfs + data.num_processors_sjf + data.num_processors_rr);
@@ -301,30 +285,26 @@ namespace core {
 				m_Processors.Add(new ProcessorFCFS(this));
 			}
 
-			swprintf(buf, L"Created %d FCFS", data.num_processors_fcfs);
-			LOG(buf);
+			LOGF(L"Created %d FCFS", data.num_processors_fcfs);
 
 			for (int i = 0; i < data.num_processors_sjf; i++) {
 				m_Processors.Add(new ProcessorSJF(this));
 			}
 
-			swprintf(buf, L"Created %d SJF", data.num_processors_sjf);
-			LOG(buf);
+			LOGF(L"Created %d SJF", data.num_processors_sjf);
 
 			for (int i = 0; i < data.num_processors_rr; i++) {
 				m_Processors.Add(new ProcessorRR(this));
 			}
 
-			swprintf(buf, L"Created %d RR", data.num_processors_rr);
-			LOG(buf);
+			LOGF(L"Created %d RR", data.num_processors_rr);
 
 			//enqueue sigkills
 			for (int i = 0; i < deserializer.GetSigkillCount(); i++) {
 				m_Sigkills.Enqueue(data.sigkills[i]);
 			}
 
-			swprintf(buf, L"Created %d SIGKILLS", deserializer.GetSigkillCount());
-			LOG(buf);
+			LOGF(L"Created %d SIGKILLS", deserializer.GetSigkillCount());
 		}
 		else {
 			LOG(L"Loading file failed");
@@ -351,9 +331,7 @@ namespace core {
 	}
 
 	void Scheduler::NotifyProcessBlocked(Process* proc) {
-		wchar_t buf[100];
-		swprintf(buf, L"Blocked process notif, pid=%d", proc->GetPID());
-		LOG(buf);
+		LOGF(L"Blocked process notif, pid=%d", proc->GetPID());
 
 		//enqueue to BLK
 		m_BlockedProcesses.Enqueue(proc);

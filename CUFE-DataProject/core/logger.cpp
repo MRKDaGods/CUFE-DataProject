@@ -8,15 +8,18 @@ namespace core {
 		if (ms_Instance == 0) {
 			ms_Instance = this;
 		}
+
+		//by default
+		m_Color = COL(BLACK, WHITE);
 		
-		m_Logs = new _COLLECTION LinkedList<_STD wstring>();
+		m_Logs = new _COLLECTION LinkedList<LogMessage>();
 	}
 
 	Logger::~Logger() {
 		delete m_Logs;
 	}
 
-	_COLLECTION LinkedList<_STD wstring>* Logger::GetLogs() {
+	_COLLECTION LinkedList<LogMessage>* Logger::GetLogs() {
 		return m_Logs;
 	}
 
@@ -24,7 +27,7 @@ namespace core {
 		return ms_Instance;
 	}
 
-	void Logger::Log(_STD wstring msg) {
+	void Logger::Log(LogMessage msg) {
 		constexpr int maxLen = LOG_WIDTH - 7;
 
 		int ts = m_Scheduler->GetSimulationInfo()->GetTimestep();
@@ -34,16 +37,29 @@ namespace core {
 			m_Logs->Remove(*(*m_Logs)[0]);
 		}
 
-		while (msg.length() > maxLen) {
-			Log(msg.substr(0, maxLen));
-			msg = msg.substr(maxLen);
+		while (msg.text.length() > maxLen) {
+			Log(LogMessage{ 
+				msg.text.substr(0, maxLen),
+				msg.color
+			});
+
+			msg.text = msg.text.substr(maxLen);
 		}
 
-		if (msg.size() > 0) {
+		if (msg.text.size() > 0) {
 			wchar_t buf[LOG_WIDTH];
-			swprintf(buf, L"[%d] %s", ts, msg.c_str());
+			swprintf(buf, L"[%d] %s", ts, msg.text.c_str());
+			msg.text = buf;
 
-			m_Logs->Add(buf);
+			m_Logs->Add(msg);
 		}
+	}
+
+	void Logger::Log(_STD wstring msg) {
+		Log(LogMessage{ msg, m_Color });
+	}
+
+	void Logger::SetColor(_UI Color color) {
+		m_Color = color;
 	}
 }

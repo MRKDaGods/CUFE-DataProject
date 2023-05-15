@@ -6,6 +6,9 @@
 #define COL_BG(name) _UI COLOR_BG_##name
 #define COLS(...) _UI CombineColors({##__VA_ARGS__})
 
+//combine colors (BG/FG)
+#define COL(bg, fg) COLS(_UI COLOR_BG_##bg, _UI COLOR_FG_##fg)
+
 namespace ui {
 	enum Color {
 		COLOR_FG_BLACK = 0x0000,

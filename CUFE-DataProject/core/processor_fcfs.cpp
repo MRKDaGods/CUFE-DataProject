@@ -51,9 +51,7 @@ namespace core {
 
 		int pid = RandomEngine::GetInt(1, m_Scheduler->GetLoadFileInfo()->proc_count);
 
-		wchar_t buf[100];
-		swprintf(buf, L"Chosen pid=%d", pid);
-		LOG(buf);
+		LOGF(L"Chosen pid=%d", pid);
 
 		Process* proc = m_ReadyProcesses.GetProcessWithID(pid);
 		if (proc != 0) {
@@ -71,9 +69,7 @@ namespace core {
 	}
 
 	void ProcessorFCFS::ProcessSigkill(int pid) {
-		wchar_t buf[100];
-		swprintf(buf, L"ProcessSigkill(%d)", pid);
-		LOG(buf);
+		LOGF(L"ProcessSigkill(%d)", pid);
 
 		//nothing to do
 		if (m_RunningProcess == 0 && m_ReadyProcesses.GetLength() == 0) {
