@@ -29,9 +29,18 @@ namespace core {
 		/// </summary>
 		bool success;
 
-		/// <summary>
-		/// Number of processes loaded
-		/// </summary>
+		//rest of struct is from DeserializerData
+
+		//time slice for RR
+		int rr_timeslice;
+
+		//attribs
+		int rtf;
+		int maxw;
+		int stl;
+		int fork_prob;
+
+		//number of processes
 		int proc_count;
 	};
 
@@ -66,11 +75,6 @@ namespace core {
 		/// Queue of BLK processes
 		/// </summary>
 		_COLLECTION ProcessLinkedQueue m_BlockedProcesses;
-
-		/// <summary>
-		/// Queue of sigkills
-		/// </summary>
-		_COLLECTION LinkedQueue<SigkillTimeInfo> m_Sigkills;
 
 		/// <summary>
 		/// Currently loaded file info
@@ -117,7 +121,7 @@ namespace core {
 		~Scheduler();
 
 		/// <summary>
-		/// Did the processes load successfully?
+		/// Loaded file info
 		/// </summary>
 		LoadFileInfo* GetLoadFileInfo();
 
@@ -157,6 +161,9 @@ namespace core {
 		/// and should be moved the BLK list
 		/// </summary>
 		void NotifyProcessBlocked(Process* proc);
+
+		// Forks a new process
+		void ForkProcess(Process* parent);
 
 		/// <summary>
 		/// Prints info from scheduler into the stream

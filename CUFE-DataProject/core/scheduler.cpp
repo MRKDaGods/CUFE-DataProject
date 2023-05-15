@@ -26,13 +26,13 @@ namespace core {
 
 	Processor* Scheduler::GetProcessorWithShortestQueue() {
 		Processor* proc = *m_Processors[0];
-		int val = proc->GetConcurrentTimer();
+		int val = proc->GetConcurrentTimer(false);
 
 		for (int i = 1; i < m_Processors.GetLength(); i++) {
 			Processor* cur = *m_Processors[i];
-			if (cur->GetConcurrentTimer() < val) {
+			if (cur->GetConcurrentTimer(false) < val) {
 				proc = cur;
-				val = cur->GetConcurrentTimer();
+				val = cur->GetConcurrentTimer(false);
 			}
 		}
 
@@ -78,6 +78,7 @@ namespace core {
 
 	void Scheduler::UpdateProcessor(Processor* processor) {
 		//currently running process is not null, check for completion
+
 		Process* runningProc = processor->GetRunningProcess();
 		if (runningProc != 0) {
 			runningProc->Tick();
@@ -104,32 +105,8 @@ namespace core {
 			}
 		}
 
-		//get running process again incase of change
-		//run schedule algo incase of process null
-		if (processor->GetRunningProcess() == 0) {
-			LOG(L"Processor doesnt have proc, scheduling...");
-			processor->ScheduleAlgo();
-		}
-
-		//kill random proc in RDY for FCFS
-		if (processor->GetProcessorType() == ProcessorType::FCFS) {
-			LOG(L"Processor is FCFS");
-
-			ProcessorFCFS* fcfs = (ProcessorFCFS*)processor;
-
-			LOG(L"Looking for sigkill");
-			//process sigkill for FCFS
-			SigkillTimeInfo sigkill;
-			if (m_Sigkills.Peek(&sigkill) && sigkill.time == m_SimulationInfo.GetTimestep()) {
-				//dequeue sigkill
-				m_Sigkills.Dequeue();
-
-				LOGF(L"Found sigkill for proc pid=%d", sigkill.proc_pid);
-
-				//process it
-				fcfs->ProcessSigkill(sigkill.proc_pid);
-			}
-		}
+		//call schedule algo
+		processor->ScheduleAlgo();
 	}
 
 	LoadFileInfo* Scheduler::GetLoadFileInfo() {
@@ -255,7 +232,7 @@ namespace core {
 
 			//enqueue sigkills
 			for (int i = 0; i < deserializer.GetSigkillCount(); i++) {
-				m_Sigkills.Enqueue(data.sigkills[i]);
+				ProcessorFCFS::RegisterSigkillInfo(data.sigkills[i]);
 			}
 
 			LOGF(L"Created %d SIGKILLS", deserializer.GetSigkillCount());
@@ -268,7 +245,12 @@ namespace core {
 		m_LoadFileInfo = {
 			filename,
 			success,
-			data.proc_count
+			data.rr_timeslice,
+			data.rtf,
+			data.maxw,
+			data.stl,
+			data.fork_prob,
+			data.proc_count,
 		};
 	}
 
@@ -280,6 +262,9 @@ namespace core {
 		//add process to TRM list
 		m_TerminatedProcesses.Add(proc->GetPID());
 
+		//find parent and notify them
+		proc->GetForkingData()->parent = 0;
+
 		//delete process
 		delete proc;
 	}
@@ -289,6 +274,29 @@ namespace core {
 
 		//enqueue to BLK
 		m_BlockedProcesses.Enqueue(proc);
+	}
+
+	void Scheduler::ForkProcess(Process* parent) {
+		if (parent == 0) return; //parent must not be null for a forked process
+
+		ForkingData* parentForkingData = parent->GetForkingData();
+
+		//mark process forked
+		parentForkingData->has_forked = true;
+
+		//create new process
+		Process* child = new Process(m_LoadFileInfo.proc_count++,
+			m_SimulationInfo.GetTimestep(),
+			parent->GetRemainingTime(),
+			0,
+			0);
+
+		//assign child and parent info
+		parentForkingData->child = child;
+		child->GetForkingData()->parent = parent;
+
+		//schedule child process
+		Schedule(child);
 	}
 
 	void Scheduler::Print(_STD wstringstream& stream) {

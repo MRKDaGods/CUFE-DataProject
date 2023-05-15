@@ -1,8 +1,8 @@
 #include "process.h"
 
 namespace core {
-	Process::Process(int pid, int at, int ct, ProcessIOData* ioData, int ioDataSz) : m_PID(pid), m_ArrivalTime(at), m_CpuTime(ct), m_ResponseTime(0), m_TerminationTime(0),
-		m_Ticks(0), m_State(ProcessState::NEW), m_ChildProcess(0) {
+	Process::Process(int pid, int at, int ct, ProcessIOData* ioData, int ioDataSz) : m_PID(pid), m_ArrivalTime(at), m_CpuTime(ct), 
+		m_ResponseTime(0), m_TerminationTime(0), m_Ticks(0), m_State(ProcessState::NEW) {
 		//check for and enqueue io data
 		if (ioData != 0 && ioDataSz > 0) {
 			for (int i = 0; i < ioDataSz; i++) {
@@ -11,6 +11,9 @@ namespace core {
 				//caller is responsible for deleting ioData
 			}
 		}
+
+		//initialize forking data
+		memset(&m_ForkingData, 0, sizeof(ForkingData));
 	}
 
 	int Process::GetPID() {
@@ -67,6 +70,14 @@ namespace core {
 		m_IODataQueue.Dequeue(&data);
 
 		return data;
+	}
+
+	int Process::GetRemainingTime() {
+		return m_CpuTime - m_Ticks;
+	}
+
+	ForkingData* Process::GetForkingData() {
+		return &m_ForkingData;
 	}
 
 	_STD wstringstream& operator<<(_STD wstringstream& stream, Process* proc) {

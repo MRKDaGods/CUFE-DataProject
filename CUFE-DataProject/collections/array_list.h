@@ -30,9 +30,7 @@ namespace collections {
 			m_Capacity = capacity;
 		}
 
-		/// <summary>
-		/// Increases capacity if needed
-		/// </summary>
+		// Increases capacity if needed
 		void CheckCapacity() {
 			//count is equal to capacity, we need more space
 			if (m_Count == m_Capacity) {
@@ -46,9 +44,7 @@ namespace collections {
 			UpdateAllocations(initialCapacity);
 		}
 
-		/// <summary>
-		/// Adds an element to the list
-		/// </summary>
+		// Adds an element to the list
 		virtual void Add(T val) override {
 			CheckCapacity();
 

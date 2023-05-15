@@ -7,7 +7,7 @@ namespace collections {
 	/// <summary>
 	/// Pri-Queue implemented using a LinkedList
 	/// </summary>
-	template<typename T, typename Comp = _STD less<T>>
+	template<typename T, typename Comp>
 	class LinkedPriorityQueue : public Queue<T> {
 	protected:
 		/// <summary>

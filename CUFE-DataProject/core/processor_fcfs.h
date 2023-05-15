@@ -4,11 +4,22 @@
 #include "../collections/linked_list.h"
 #include "processor.h"
 #include "process.h"
+#include "deserializer.h"
 
 namespace core {
 	class ProcessorFCFS : public Processor {
 	private:
 		_COLLECTION ProcessLinkedList m_ReadyProcesses;
+
+		/// <summary>
+		/// Queue of sigkills
+		/// </summary>
+		static _COLLECTION LinkedQueue<SigkillTimeInfo> ms_Sigkills;
+
+		/// <summary>
+		/// Processes a sigkill
+		/// </summary>
+		void ProcessSigkill(int pid);
 
 	public:
 		ProcessorFCFS(Scheduler* scheduler);
@@ -23,13 +34,13 @@ namespace core {
 		void KillRandomProcess();
 
 		/// <summary>
-		/// Processes a sigkill
+		/// Requeue currently running process
 		/// </summary>
-		void ProcessSigkill(int pid);
+		virtual void RequeueRunningProcess() override;
 
 		/// <summary>
-		/// 
+		/// Queues a process sigkill
 		/// </summary>
-		virtual void ReqeueueRunningProcess() override;
+		static void RegisterSigkillInfo(SigkillTimeInfo sigkill);
 	};
 }

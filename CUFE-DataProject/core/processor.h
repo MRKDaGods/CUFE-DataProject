@@ -58,7 +58,7 @@ namespace core {
 		/// <summary>
 		/// Returns the concurrent timer value
 		/// </summary>
-		int GetConcurrentTimer();
+		int GetConcurrentTimer(bool withRunning = true);
 
 		/// <summary>
 		/// Returns the current processor state
@@ -104,7 +104,7 @@ namespace core {
 		/// <summary>
 		/// Puts back the currently running process in the RDY queue
 		/// </summary>
-		virtual void ReqeueueRunningProcess();
+		virtual void RequeueRunningProcess();
 
 		/// <summary>
 		/// Prints processor data into stream

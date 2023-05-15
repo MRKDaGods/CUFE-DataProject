@@ -9,8 +9,10 @@ namespace core {
 		return m_Type;
 	}
 
-	int Processor::GetConcurrentTimer() {
-		return m_ConcurrentTimer;
+	int Processor::GetConcurrentTimer(bool withRunning) {
+		if (withRunning || m_RunningProcess == 0) return m_ConcurrentTimer;
+
+		return m_ConcurrentTimer - m_RunningProcess->GetRemainingTime();
 	}
 
 	ProcessorState Processor::GetState() {
@@ -22,7 +24,7 @@ namespace core {
 	}
 
 	void Processor::DecrementTimer(Process* proc) {
-		m_ConcurrentTimer -= proc != 0 ? (proc->GetCPUTime() - proc->GetTicks()) : 1;
+		m_ConcurrentTimer -= proc != 0 ? proc->GetRemainingTime() : 1;
 	}
 
 	void Processor::TerminateProcess(Process* proc) {
@@ -81,7 +83,7 @@ namespace core {
 		m_State = ProcessorState::IDLE;
 	}
 
-	void Processor::ReqeueueRunningProcess() {
+	void Processor::RequeueRunningProcess() {
 		if (m_RunningProcess == 0) return;
 
 		//update state to RDY
@@ -103,7 +105,12 @@ namespace core {
 	}
 
 	void Processor::Print(_STD wstringstream& stream) {
-		stream << L"[" << ProcessorStateToWString(m_State) << L"] Processor (" << ProcessorTypeToWString(m_Type) << L") [" << m_ConcurrentTimer << L"]: ";
+		stream << L"[" << ProcessorStateToWString(m_State) 
+			<< L"] Processor (" 
+			<< ProcessorTypeToWString(m_Type) 
+			<< L") [" 
+			<< GetConcurrentTimer() 
+			<< L"]: ";
 	}
 
 	_STD wstring ProcessorTypeToWString(ProcessorType type) {

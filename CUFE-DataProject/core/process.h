@@ -9,6 +9,8 @@
 #include <sstream>
 
 namespace core {
+	class Process;
+
 	/// <summary>
 	/// IO data pair (IO_R, IO_D)
 	/// </summary>
@@ -28,6 +30,18 @@ namespace core {
 		}
 	};
 
+	struct ForkingData {
+		// Parent process, we must keep track of this
+	    // as when THIS gets deleted, we must notify the parent
+		Process* parent;
+
+		// Child process
+		Process* child;
+
+		// Has the process forked before?
+		bool has_forked;
+	};
+
 	class Process {
 	private:
 		/// <summary>
@@ -45,20 +59,14 @@ namespace core {
 		/// </summary>
 		int m_Ticks;
 
-		/// <summary>
-		/// Current process state
-		/// </summary>
+		// Current process state
 		ProcessState m_State;
 
-		/// <summary>
-		/// IO data qeueue
-		/// </summary>
+		// IO data qeueue
 		_COLLECTION LinkedQueue<ProcessIOData> m_IODataQueue;
 
-		/// <summary>
-		/// Process child
-		/// </summary>
-		Process* m_ChildProcess;
+		// Forking related info
+		ForkingData m_ForkingData;
 
 		friend _STD wstringstream& operator<<(_STD wstringstream& stream, Process* proc);
 
@@ -129,6 +137,16 @@ namespace core {
 		/// Returns the IO data that is to be handled next, and pops it from the queue
 		/// </summary>
 		ProcessIOData GetIOData();
+
+		/// <summary>
+		/// Returns the time left for the process to run
+		/// </summary>
+		int GetRemainingTime();
+
+		/// <summary>
+		/// The process forking data
+		/// </summary>
+		ForkingData* GetForkingData();
 	};
 }
 
@@ -143,18 +161,18 @@ namespace collections {
 		_CORE Process* GetProcessWithID(int pid);
 	};
 
-	class ProcessLinkedQueue : public _COLLECTION LinkedQueue<_CORE Process*> {
+	class ProcessLinkedQueue : public LinkedQueue<_CORE Process*> {
 	public:
 		void Print(_STD wstringstream& stream);
 	};
 
 	struct ProcessPriority {
 		bool operator()(_CORE Process* p1, _CORE Process* p2) {
-			return p1->GetCPUTime() < p2->GetCPUTime();
+			return p1->GetRemainingTime() < p2->GetRemainingTime();
 		}
 	};
 
-	class ProcessLinkedPriorityQueue : public _COLLECTION LinkedPriorityQueue<_CORE Process*, ProcessPriority> {
+	class ProcessLinkedPriorityQueue : public LinkedPriorityQueue<_CORE Process*, ProcessPriority> {
 	public:
 		void Print(_STD wstringstream& stream);
 	};

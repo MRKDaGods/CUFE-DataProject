@@ -3,10 +3,25 @@
 #include "random_engine.h"
 
 namespace core {
+	_COLLECTION LinkedQueue<SigkillTimeInfo> ProcessorFCFS::ms_Sigkills;
+
 	ProcessorFCFS::ProcessorFCFS(Scheduler* scheduler) : Processor(ProcessorType::FCFS, scheduler) {
 	}
 	
 	void ProcessorFCFS::ScheduleAlgo() {
+		if (m_RunningProcess != 0) {
+			//check for forking
+			//the process must have not forked before
+			if (!m_RunningProcess->GetForkingData()->has_forked) {
+				//generate probability
+				int num = RandomEngine::GetInt(1, 100);
+				if (num <= m_Scheduler->GetLoadFileInfo()->fork_prob) {
+					//fork !!!
+					m_Scheduler->ForkProcess(m_RunningProcess);
+				}
+			}
+		}
+
 		//get process from ready
 		if (m_RunningProcess == 0 && m_ReadyProcesses.GetLength() > 0) {
 			//running proc should be head O(1)
@@ -17,6 +32,20 @@ namespace core {
 
 			//run it
 			RunProcess(proc);
+		}
+
+		LOG(L"Looking for sigkill");
+
+		//process sigkill for FCFS
+		SigkillTimeInfo sigkill;
+		if (ms_Sigkills.Peek(&sigkill) && sigkill.time == m_Scheduler->GetSimulationInfo()->GetTimestep()) {
+			//dequeue sigkill
+			ms_Sigkills.Dequeue();
+
+			LOGF(L"Found sigkill for proc pid=%d", sigkill.proc_pid);
+
+			//process it
+			ProcessSigkill(sigkill.proc_pid);
 		}
 	}
 
@@ -103,11 +132,15 @@ namespace core {
 		}
 	}
 
-	void ProcessorFCFS::ReqeueueRunningProcess() {
+	void ProcessorFCFS::RequeueRunningProcess() {
 		if (m_RunningProcess != 0) {
 			m_ReadyProcesses.Add(m_RunningProcess);
 		}
 
-		Processor::ReqeueueRunningProcess();
+		Processor::RequeueRunningProcess();
+	}
+	
+	void ProcessorFCFS::RegisterSigkillInfo(SigkillTimeInfo sigkill) {
+		ms_Sigkills.Enqueue(sigkill);
 	}
 }
