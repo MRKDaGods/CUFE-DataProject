@@ -27,7 +27,11 @@ namespace core {
 		return ms_Instance;
 	}
 
-	void Logger::Log(LogMessage msg) {
+	void Logger::Log(LogMessage msg, bool acquireMutex) {
+		if (acquireMutex) { //prevent deadlock
+			AcquireMutex();
+		}
+
 		constexpr int maxLen = LOG_WIDTH - 7;
 
 		int ts = m_Scheduler->GetSimulationInfo()->GetTimestep();
@@ -41,7 +45,7 @@ namespace core {
 			Log(LogMessage{ 
 				msg.text.substr(0, maxLen),
 				msg.color
-			});
+			}, false);
 
 			msg.text = msg.text.substr(maxLen);
 		}
@@ -53,6 +57,10 @@ namespace core {
 
 			m_Logs->Add(msg);
 		}
+
+		if (acquireMutex) {
+			ReleaseMutex();
+		}
 	}
 
 	void Logger::Log(_STD wstring msg) {
@@ -61,5 +69,14 @@ namespace core {
 
 	void Logger::SetColor(_UI Color color) {
 		m_Color = color;
+	}
+
+	void Logger::AcquireMutex() {
+		//blocks thread till mutex is available
+		m_LogMutex.lock();
+	}
+
+	void Logger::ReleaseMutex() {
+		m_LogMutex.unlock();
 	}
 }

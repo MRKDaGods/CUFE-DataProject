@@ -326,11 +326,15 @@ namespace core {
 	}
 
 	void SchedulerView::RenderLogs() {
+		Logger* logger = Logger::GetInstance();
+
+		logger->AcquireMutex();
+
 		_UTIL Vector2 screenSize = m_UI->GetRenderer()->GetScreenSize();
 
 		int x = VEC_INT_X(screenSize) - LOG_WIDTH;
 
-		_COLLECTION LinkedList<LogMessage>* logs = Logger::GetInstance()->GetLogs();
+		_COLLECTION LinkedList<LogMessage>* logs = logger->GetLogs();
 
 		int h = logs->GetLength();
 		int y = VEC_INT_Y(screenSize) - h - 1;
@@ -342,6 +346,8 @@ namespace core {
 		for (_COLLECTION LinkedListNode<LogMessage>* node = logs->GetHead(); node; node = node->next) {
 			m_UI->DrawString(x, y++, node->value.text, node->value.color);
 		}
+
+		logger->ReleaseMutex();
 	}
 
 	void SchedulerView::HandleToolbarAction(int i, _UI Color col) {

@@ -116,7 +116,6 @@ namespace core {
 			LOG(L"Processor is FCFS");
 
 			ProcessorFCFS* fcfs = (ProcessorFCFS*)processor;
-			fcfs->KillRandomProcess();
 
 			LOG(L"Looking for sigkill");
 			//process sigkill for FCFS
@@ -171,51 +170,6 @@ namespace core {
 			LOGF(L"Updating processor ID=%d, type=%s", i + 1, ProcessorTypeToWString(processor->GetProcessorType()).c_str());
 
 			UpdateProcessor(processor);
-
-			Process* proc = processor->GetRunningProcess();
-			if (proc != 0) {
-				LOG(L"Running proc exists, running probability");
-
-				int num = RandomEngine::GetInt(1, 100);
-				LOGF(L"Num(1-100)=%d", num);
-				
-				if (num >= 1 && num <= 15) {
-					LOG(L"Res=MOVE TO BLK");
-
-					//move to BLK
-					//proc must have io data
-					if (proc->HasAnyIOEvent()) {
-						LOG(L"Blocing proc...");
-						processor->BlockRunningProcess();
-					}
-				}
-				else if (num >= 20 && num <= 30) {
-					LOG(L"Res=MOVE TO RDY");
-
-					//move to RDY
-					processor->ReqeueueRunningProcess();
-				}
-				else if (num >= 50 && num <= 60) {
-					LOG(L"Res=MOVE TO TRM");
-
-					processor->TerminateRunningProcess();
-				}
-			}
-		}
-
-		LOG(L"BLK->RDY prob");
-		Process* blkTopProc = 0;
-		if (m_BlockedProcesses.Peek(&blkTopProc)) {
-			LOG(L"BLK top proc found");
-			if (RandomEngine::GetInt(1, 100) < 10) {
-				LOG(L"Moving...");
-
-				//dequeue from BLK
-				m_BlockedProcesses.Dequeue();
-
-				//reschedule
-				Schedule(blkTopProc);
-			}
 		}
 
 		//update io
