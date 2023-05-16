@@ -114,6 +114,104 @@ namespace core {
 		processor->ScheduleAlgo();
 	}
 
+	void Scheduler::Terminate() {
+		LOG(L"Terminating scheduler...");
+
+		//done, stop the simulation
+		m_SimulationInfo.Stop();
+		m_View.NotifyStopped();
+	}
+
+	void Scheduler::UpdateWorkStealing() {
+		//check for STL time
+		if (m_SimulationInfo.GetTimestep() % m_LoadFileInfo.data.stl != 0) return;
+
+		if (m_Processors.GetLength() <= 1) {
+			//no work stealing for such time
+			return;
+		}
+
+		PUSHCOL(COL(DARK_BLUE, WHITE));
+		LOG(L"Updating Work Stealing");
+
+		//get longest queue and shortest queue
+		struct {
+			Processor* processor;
+			int time;
+
+			int id; //for debug
+		} min = { 0, INT_MAX }, max = { 0, INT_MIN };
+
+		for (int i = 0; i < m_Processors.GetLength(); i++) {
+			Processor* cur = *m_Processors[i];
+			
+			//get remaining time without running proc
+			int time = cur->GetConcurrentTimer(false);
+
+			if (min.processor == 0 || min.time > time) {
+				min.processor = cur;
+				min.time = time;
+				min.id = i + 1;
+			}
+
+			if (max.processor == 0 || max.time < time) {
+				max.processor = cur;
+				max.time = time;
+				max.id = i + 1;
+			}
+		}
+
+		//check if min = max
+		if (min.processor != max.processor) {
+			LOGF(L"Entering stealing, MIN=%d, MAX=%d", min.id, max.id);
+
+			//debug
+			int stealCount = 0;
+
+			//start work stealing
+			while (true) {
+				//calc steal limit
+				float stealLimit = (max.time - min.time) / (float)max.time;
+				LOGF(L"StealLimit=%.2f%%", stealLimit * 100.f);
+				if (stealLimit <= 0.4f) {
+					//stealLimit isnt greater than 40%, no stealing
+					LOG(L"Exiting stealing, low limit");
+					break;
+				}
+
+				//stealLimit > 40%, start stealing
+				//find applicable process to steal from longest
+				//get steal handle
+				StealHandle handle;
+				if (!max.processor->GetStealHandle(&handle)) {
+					LOG(L"Cannot obtain a steal handle, exiting...");
+					break;
+				}
+
+				//we have a steal handle
+				//execute handle, then queue process to min queue
+				handle.execute();
+
+				//queue process
+				min.processor->QueueProcess(handle.process);
+
+				//update min, max times
+				min.time = min.processor->GetConcurrentTimer(false);
+				max.time = max.processor->GetConcurrentTimer(false);
+
+				//increment debug counter
+				stealCount++;
+
+				LOGF(L"Executed handle, stole pid=%d", handle.process->GetPID());
+			}
+
+			LOGF(L"Steal finished, count=%d", stealCount);
+		}
+
+		LOG(L"Working stealing done");
+		POPCOL();
+	}
+
 	LoadFileInfo* Scheduler::GetLoadFileInfo() {
 		return &m_LoadFileInfo;
 	}
@@ -123,6 +221,16 @@ namespace core {
 	}
 
 	void Scheduler::Update() {
+		//check for processor count, obv dont run if there are no processors
+		if (m_Processors.GetLength() == 0) {
+			PUSHCOL(COL(DARK_RED, WHITE));
+			LOG(L"No processors found !!!");
+			POPCOL();
+
+			Terminate();
+			return;
+		}
+
 		int ts = m_SimulationInfo.GetTimestep();
 
 		//set log color
@@ -158,6 +266,9 @@ namespace core {
 		//update io
 		UpdateIO();
 
+		//work stealing
+		UpdateWorkStealing();
+
 		LOG(L"Scheduler update finished, notifying observers..");
 
 		//mark updated
@@ -165,11 +276,7 @@ namespace core {
 
 		//check if simulation has ended
 		if (m_TerminatedProcesses.GetLength() == m_LoadFileInfo.data.proc_count) {
-			LOG(L"Terminating scheduler...");
-
-			//done, stop the simulation
-			m_SimulationInfo.Stop();
-			m_View.NotifyStopped();
+			Terminate();
 		}
 
 		//pop logger color

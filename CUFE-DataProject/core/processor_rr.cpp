@@ -72,6 +72,30 @@ namespace core {
 		Processor::RequeueRunningProcess();
 	}
 
+	bool ProcessorRR::GetStealHandle(StealHandle* stealHandle) {
+		if (stealHandle == 0) return false;
+
+		//check for any RDY process
+		if (m_ReadyProcesses.GetLength() == 0) return false;
+
+		Process* proc = 0;
+		if (!m_ReadyProcesses.Peek(&proc) || proc->IsForked()) return false; //no forked processes are applicable
+
+		//process is applicable for stealing
+		*stealHandle = {
+			proc,
+			[&]() -> void {
+				//update timer
+				DecrementTimer(proc);
+
+				//remove from queue
+				m_ReadyProcesses.Dequeue();
+			}
+		};
+
+		return true;
+	}
+
 	bool ProcessorRR::TryMigrate(Process*& proc) {
 		if (proc == 0) return false;
 

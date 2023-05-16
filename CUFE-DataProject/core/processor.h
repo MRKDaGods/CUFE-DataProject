@@ -4,6 +4,7 @@
 #include "process.h"
 
 #include <sstream>
+#include <functional>
 
 namespace core {
 	class Scheduler;
@@ -13,6 +14,15 @@ namespace core {
 		FCFS,
 		SJF,
 		RR
+	};
+
+	// Simple handle containing a process to be stolen, and a steal delegate
+	struct StealHandle {
+		// Steal applicable process
+		Process* process;
+
+		// Steal executor
+		_STD function<void()> execute;
 	};
 
 	class Processor {
@@ -109,6 +119,9 @@ namespace core {
 		/// Puts back the currently running process in the RDY queue
 		/// </summary>
 		virtual void RequeueRunningProcess();
+
+		// Returns a steal handle for a process, if applicable
+		virtual bool GetStealHandle(StealHandle* stealHandle) abstract;
 
 		/// <summary>
 		/// Prints processor data into stream

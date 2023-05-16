@@ -107,6 +107,12 @@ namespace core {
 		/// </summary>
 		void UpdateProcessor(Processor* processor);
 
+		// Terminates the scheduler
+		void Terminate();
+
+		// Checks for work stealing, and balances the load
+		void UpdateWorkStealing();
+
 	public:
 		Scheduler();
 		~Scheduler();

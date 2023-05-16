@@ -170,6 +170,30 @@ namespace core {
 
 		Processor::RequeueRunningProcess();
 	}
+
+	bool ProcessorFCFS::GetStealHandle(StealHandle* stealHandle) {
+		if (stealHandle == 0) return false;
+
+		//check for any RDY process
+		if (m_ReadyProcesses.GetLength() == 0) return false;
+
+		Process* proc = *m_ReadyProcesses[0];
+		if (proc->IsForked()) return false; //no forked processes are applicable
+
+		//process is applicable for stealing
+		*stealHandle = {
+			proc,
+			[&]() -> void {
+				//update timer
+				DecrementTimer(proc);
+
+				//remove from head of list
+				m_ReadyProcesses.Remove(proc);
+			}
+		};
+
+		return true;
+	}
 	
 	void ProcessorFCFS::RegisterSigkillInfo(SigkillTimeInfo sigkill) {
 		ms_Sigkills.Enqueue(sigkill);

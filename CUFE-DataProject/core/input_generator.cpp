@@ -62,11 +62,14 @@ namespace core {
 
 			int procCpuTime = RandomEngine::GetInt(10, 300);
 
+			//int procDeadline = procAt + RandomEngine::GetInt(5, procCpuTime);
+
 			int ioCount = RandomEngine::GetInt(0, 10);
 
 			file << procAt << '\t'
 				<< procPid << '\t'
 				<< procCpuTime << '\t'
+				//<< procDeadline << '\t'
 				<< ioCount << '\t';
 
 			int ioBuf = 0;

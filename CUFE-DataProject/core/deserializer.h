@@ -26,6 +26,7 @@ namespace core {
 		int num_processors_fcfs;
 		int num_processors_sjf;
 		int num_processors_rr;
+		int num_processors_edf;
 		
 		//time slice for RR
 		int rr_timeslice;

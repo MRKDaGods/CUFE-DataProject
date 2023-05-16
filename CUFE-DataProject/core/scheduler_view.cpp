@@ -359,7 +359,9 @@ namespace core {
 
 		//manual traversal (performance)
 		for (_COLLECTION LinkedListNode<LogMessage>* node = logs->GetHead(); node; node = node->next) {
-			m_UI->DrawString(x, y++, node->value.text, node->value.color);
+			int curY = y++;
+			m_UI->DrawLine(x, curY, x + LOG_WIDTH, curY, node->value.color, L' ');
+			m_UI->DrawString(x, curY, node->value.text, node->value.color);
 		}
 
 		logger->ReleaseMutex();

@@ -45,6 +45,9 @@ namespace core {
 		/// </summary>
 		virtual void RequeueRunningProcess() override;
 
+		// Returns a steal handle for a process, if applicable
+		virtual bool GetStealHandle(StealHandle* stealHandle) override;
+
 		/// <summary>
 		/// Queues a process sigkill
 		/// </summary>
