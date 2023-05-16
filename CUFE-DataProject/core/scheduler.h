@@ -30,18 +30,9 @@ namespace core {
 		bool success;
 
 		//rest of struct is from DeserializerData
-
-		//time slice for RR
-		int rr_timeslice;
-
-		//attribs
-		int rtf;
-		int maxw;
-		int stl;
-		int fork_prob;
-
-		//number of processes
-		int proc_count;
+		
+		//deserialized data
+		DeserializerData data;
 	};
 
 	struct IOMutex {
@@ -104,7 +95,7 @@ namespace core {
 		/// <summary>
 		/// Returns the processor with the shortest queue
 		/// </summary>
-		Processor* GetProcessorWithShortestQueue();
+		Processor* GetProcessorWithShortestQueue(ProcessorType processorType);
 
 		/// <summary>
 		/// Monitors the IO mutex
@@ -138,7 +129,7 @@ namespace core {
 		/// <summary>
 		/// Schedules a process to be ran on a processor
 		/// </summary>
-		void Schedule(Process* proc);
+		void Schedule(Process* proc, ProcessorType processorType = ProcessorType::None);
 
 		/// <summary>
 		/// Advances the timestep, if state is playing and in interactive mode
@@ -164,6 +155,9 @@ namespace core {
 
 		// Forks a new process
 		void ForkProcess(Process* parent);
+
+		// Migrates a process to another processor
+		void MigrateProcess(Process* proc, ProcessorType targetProcessorType);
 
 		/// <summary>
 		/// Prints info from scheduler into the stream

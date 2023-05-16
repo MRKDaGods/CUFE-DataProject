@@ -10,7 +10,7 @@ namespace core {
 		}
 
 		//by default
-		m_Color = COL(BLACK, WHITE);
+		PushColor(COL(BLACK, WHITE));
 		
 		m_Logs = new _COLLECTION LinkedList<LogMessage>();
 	}
@@ -64,16 +64,29 @@ namespace core {
 	}
 
 	void Logger::Log(_STD wstring msg) {
-		Log(LogMessage{ msg, m_Color });
+		//we already know that we have atleast one color
+		_UI Color col;
+		m_ColorStack.Peek(col);
+
+		Log(LogMessage{ msg, col });
 	}
 
-	void Logger::SetColor(_UI Color color) {
-		m_Color = color;
+	void Logger::PushColor(_UI Color color) {
+		m_ColorStack.Push(color);
+	}
+
+	void Logger::PopColor() {
+		//we will always keep our default color at the bottom, so dont pop if count=1
+		if (m_ColorStack.GetLength() > 1) {
+			m_ColorStack.Pop();
+		}
 	}
 
 	void Logger::AcquireMutex() {
 		//blocks thread till mutex is available
 		m_LogMutex.lock();
+
+		//should we use lock guard? RAI
 	}
 
 	void Logger::ReleaseMutex() {

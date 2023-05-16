@@ -4,12 +4,17 @@
 #include "../collections/linked_list.h"
 #include "../collections/linked_queue.h"
 #include "../collections/linked_priority_queue.h"
+#include "../collections/binary_tree.h"
 #include "states.h"
 
 #include <sstream>
+#include <functional>
+
+#define PROC_BT_NODE _COLLECTION BinaryTreeNode<Process*>
 
 namespace core {
 	class Process;
+	class Processor;
 
 	/// <summary>
 	/// IO data pair (IO_R, IO_D)
@@ -31,22 +36,19 @@ namespace core {
 	};
 
 	struct ForkingData {
-		// Parent process, we must keep track of this
-	    // as when THIS gets deleted, we must notify the parent
-		Process* parent;
+		// Fork tree
+		_COLLECTION BinaryTree<Process*> fork_tree;
 
-		// Child process
-		Process* child;
+		// Our foreign node address
+		PROC_BT_NODE** forgein_node;
 
-		// Has the process forked before?
-		bool has_forked;
+		// Iterates the forked children
+		void Iterate(_STD function<void(PROC_BT_NODE*)> iterator);
 	};
 
 	class Process {
 	private:
-		/// <summary>
-		/// Process unique id
-		/// </summary>
+		// Process unique id
 		int m_PID;
 
 		int m_ArrivalTime; // AT
@@ -58,6 +60,10 @@ namespace core {
 		/// Realtime execution timer
 		/// </summary>
 		int m_Ticks;
+
+		// The processor currently owning this process
+		// (Process is in RDY/RUN) state
+		Processor* m_Owner;
 
 		// Current process state
 		ProcessState m_State;
@@ -103,6 +109,12 @@ namespace core {
 		/// </summary>
 		int GetTicks();
 
+		// The owning processor
+		Processor* GetOwner();
+
+		// Sets the owning processor
+		void SetOwner(Processor* processor);
+
 		/// <summary>
 		/// Returns the current process state
 		/// </summary>
@@ -126,7 +138,7 @@ namespace core {
 		/// <summary>
 		/// Does the process have an IO event now?
 		/// </summary>
-		bool HasIOEvent(int currentTs);
+		bool HasIOEvent();
 
 		/// <summary>
 		/// Does the process have any IO event?
@@ -147,6 +159,12 @@ namespace core {
 		/// The process forking data
 		/// </summary>
 		ForkingData* GetForkingData();
+
+		// Can the process fork?
+		bool CanFork();
+
+		// Is the process a forked one?
+		bool IsForked();
 	};
 }
 

@@ -17,6 +17,7 @@ namespace core {
 		int fcfsCount = _STD stoi(model->fcfs_count);
 		int sjfCount = _STD stoi(model->sjf_count);
 		int rrCount = _STD stoi(model->rr_count);
+		int edfCount = _STD stoi(model->edf_count);
 
 		int rrSlice = _STD stoi(model->rr_slice);
 		int rtf = _STD stoi(model->rtf);
@@ -31,7 +32,13 @@ namespace core {
 
 		file << fcfsCount << '\t'
 			<< sjfCount << '\t'
-			<< rrCount << '\n';
+			<< rrCount;
+
+		if (model->enable_edf) {
+			file << '\t' << edfCount;
+		}
+
+		file << '\n';
 
 		file << rrSlice << '\n';
 
@@ -62,8 +69,10 @@ namespace core {
 				<< procCpuTime << '\t'
 				<< ioCount << '\t';
 
+			int ioBuf = 0;
 			for (int j = 0; j < ioCount; j++) {
-				int ioR = RandomEngine::GetInt(0, procCpuTime);
+				ioBuf += RandomEngine::GetInt(0, procCpuTime);
+				int ioR = ioBuf;
 				int ioD = RandomEngine::GetInt(5, 20);
 
 				char buf[50];

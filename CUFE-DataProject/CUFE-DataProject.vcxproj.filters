@@ -93,6 +93,9 @@
     <ClInclude Include="core\logger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="collections\binary_tree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

@@ -8,18 +8,31 @@ namespace core {
 	void ProcessorRR::ScheduleAlgo() {
 		//check for Time Slice
 		if (m_RunningProcess != 0) {
-			int procTicks = m_RunningProcess->GetTicks();
-			if (procTicks > m_ProcessStartTicks && procTicks % m_Scheduler->GetLoadFileInfo()->rr_timeslice == 0) {
-				LOG(L"Process reached RR slice, requeuing...");
+			//check for migration of currently running process
+			if (!TryMigrate(m_RunningProcess)) {
+				int procTicks = m_RunningProcess->GetTicks();
+				if (procTicks > m_ProcessStartTicks && procTicks % m_Scheduler->GetLoadFileInfo()->data.rr_timeslice == 0) {
+					LOG(L"Process reached RR slice, requeuing...");
 
-				//remove process
-				RequeueRunningProcess();
+					//remove process
+					RequeueRunningProcess();
+				}
 			}
 		}
 
+		//process mightve been migrated and therefore m_RunningProcess is null
+
 		//get process from ready
 		Process* proc = 0;
-		if (m_RunningProcess == 0 && m_ReadyProcesses.Dequeue(&proc)) {
+
+		do {
+			//keep on picking a new process until migration doesnt occur
+			if (m_RunningProcess == 0) {
+				m_ReadyProcesses.Dequeue(&proc);
+			}
+		} while (TryMigrate(proc));
+
+		if (proc != 0) {
 			//run it
 			RunProcess(proc);
 
@@ -57,5 +70,33 @@ namespace core {
 		}
 
 		Processor::RequeueRunningProcess();
+	}
+
+	bool ProcessorRR::TryMigrate(Process*& proc) {
+		if (proc == 0) return false;
+
+		//check if proc is forked
+		if (proc->IsForked()) return false;
+
+		LoadFileInfo* fileInfo = m_Scheduler->GetLoadFileInfo();
+
+		//check for RR processors
+		if (fileInfo->data.num_processors_rr <= 0) return false;
+
+		//check for rtf constraint
+		if (proc->GetRemainingTime() >= fileInfo->data.rtf) return false;
+
+		//start migration
+		//remove proc
+		if (m_RunningProcess == proc) {
+			m_RunningProcess = 0;
+		}
+
+		m_Scheduler->MigrateProcess(proc, ProcessorType::SJF);
+
+		//set null
+		proc = 0;
+
+		return true;
 	}
 }

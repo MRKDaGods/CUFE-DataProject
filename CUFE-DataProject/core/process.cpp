@@ -1,8 +1,9 @@
 #include "process.h"
+#include "processor.h"
 
 namespace core {
 	Process::Process(int pid, int at, int ct, ProcessIOData* ioData, int ioDataSz) : m_PID(pid), m_ArrivalTime(at), m_CpuTime(ct), 
-		m_ResponseTime(0), m_TerminationTime(0), m_Ticks(0), m_State(ProcessState::NEW) {
+		m_ResponseTime(0), m_TerminationTime(0), m_Ticks(0), m_Owner(0), m_State(ProcessState::NEW) {
 		//check for and enqueue io data
 		if (ioData != 0 && ioDataSz > 0) {
 			for (int i = 0; i < ioDataSz; i++) {
@@ -14,6 +15,9 @@ namespace core {
 
 		//initialize forking data
 		memset(&m_ForkingData, 0, sizeof(ForkingData));
+
+		//create root
+		m_ForkingData.fork_tree.Insert(0, this);
 	}
 
 	int Process::GetPID() {
@@ -40,6 +44,14 @@ namespace core {
 		return m_Ticks;
 	}
 
+	Processor* Process::GetOwner() {
+		return m_Owner;
+	}
+
+	void Process::SetOwner(Processor* processor) {
+		m_Owner = processor;
+	}
+
 	ProcessState Process::GetState() {
 		return m_State;
 	}
@@ -56,9 +68,9 @@ namespace core {
 		return m_Ticks == m_CpuTime;
 	}
 
-	bool Process::HasIOEvent(int currentTs) {
+	bool Process::HasIOEvent() {
 		ProcessIOData ioData;
-		return m_IODataQueue.Peek(&ioData) && ioData.request_time == currentTs - m_ArrivalTime;
+		return m_IODataQueue.Peek(&ioData) && ioData.request_time <= m_Ticks;
 	}
 
 	bool Process::HasAnyIOEvent() {
@@ -80,9 +92,31 @@ namespace core {
 		return &m_ForkingData;
 	}
 
+	bool Process::CanFork() {
+		PROC_BT_NODE* root = m_ForkingData.fork_tree.GetRoot();
+		return root && (root->left == 0 || root->right == 0);
+	}
+
+	bool Process::IsForked() {
+		//we are forked if our foreign node isnt null
+		return m_ForkingData.forgein_node != 0;
+	}
+
 	_STD wstringstream& operator<<(_STD wstringstream& stream, Process* proc) {
 		stream << proc->m_PID;
 		return stream;
+	}
+
+	void ForkingData::Iterate(_STD function<void(PROC_BT_NODE*)> iterator) {
+		if (iterator == 0) return;
+
+		for (int i = 0; i < 2; i++) {
+			PROC_BT_NODE* node = *(PROC_BT_NODE**)((uintptr_t)fork_tree.GetRoot() + (uintptr_t)(i * 0x8));
+
+			if (node) {
+				iterator(node);
+			}
+		}
 	}
 }
 

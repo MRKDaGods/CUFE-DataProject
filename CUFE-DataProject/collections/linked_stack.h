@@ -42,5 +42,10 @@ namespace collections {
 		virtual bool IsEmpty() override {
 			return m_LinkedList.IsEmpty();
 		}
+
+		// Length of stack
+		virtual int GetLength() override {
+			return m_LinkedList.GetLength();
+		}
 	};
 }

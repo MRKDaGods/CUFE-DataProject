@@ -21,12 +21,19 @@ namespace core {
 		/// </summary>
 		void ProcessSigkill(int pid);
 
+	protected:
+		// Attempt to migrate the process from this processor to another
+		virtual bool TryMigrate(Process*& proc) override;
+
 	public:
 		ProcessorFCFS(Scheduler* scheduler);
 
 		virtual void ScheduleAlgo() override;
 		virtual void QueueProcess(Process* proc) override;
 		virtual void Print(_STD wstringstream& stream) override;
+
+		// Kills a process with the specified pid
+		void KillProcess(int pid);
 
 		/// <summary>
 		/// Attempts to kill a random process in the RDY list

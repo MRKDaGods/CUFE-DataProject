@@ -10,27 +10,37 @@ namespace core {
 	
 	void ProcessorFCFS::ScheduleAlgo() {
 		if (m_RunningProcess != 0) {
-			//check for forking
-			//the process must have not forked before
-			if (!m_RunningProcess->GetForkingData()->has_forked) {
-				//generate probability
-				int num = RandomEngine::GetInt(1, 100);
-				if (num <= m_Scheduler->GetLoadFileInfo()->fork_prob) {
-					//fork !!!
-					m_Scheduler->ForkProcess(m_RunningProcess);
+			//check for migration of currently running process
+			if (!TryMigrate(m_RunningProcess)) {
+				//check for forking
+				if (m_RunningProcess->CanFork()) {
+					//generate probability
+					int num = RandomEngine::GetInt(1, 100);
+					if (num <= m_Scheduler->GetLoadFileInfo()->data.fork_prob) {
+						//fork !!!
+						m_Scheduler->ForkProcess(m_RunningProcess);
+					}
 				}
 			}
 		}
 
+		//process mightve been migrated and therefore m_RunningProcess is null
+
 		//get process from ready
-		if (m_RunningProcess == 0 && m_ReadyProcesses.GetLength() > 0) {
-			//running proc should be head O(1)
-			Process* proc = *m_ReadyProcesses[0];
+		Process* proc = 0;
 
-			//remove from head O(1)
-			m_ReadyProcesses.Remove(proc);
+		do {
+			//keep on picking a new process until migration doesnt occur
+			if (m_RunningProcess == 0 && m_ReadyProcesses.GetLength() > 0) {
+				//running proc should be head O(1)
+				proc = *m_ReadyProcesses[0];
 
-			//run it
+				//remove from head O(1)
+				m_ReadyProcesses.Remove(proc);
+			}
+		} while (TryMigrate(proc));
+
+		if (proc != 0) {
 			RunProcess(proc);
 		}
 
@@ -70,6 +80,27 @@ namespace core {
 		stream << L'\n';
 	}
 
+	void ProcessorFCFS::KillProcess(int pid) {
+		LOGF(L"Killing process with pid=%d", pid);
+
+		//check if it's the running process
+		if (m_RunningProcess != 0 && m_RunningProcess->GetPID() == pid) {
+			//yep it is
+			TerminateRunningProcess();
+			return;
+		}
+
+		//search for it in RDY
+		Process* proc = m_ReadyProcesses.GetProcessWithID(pid);
+		if (proc != 0) {
+			//remove from ready
+			m_ReadyProcesses.Remove(proc);
+
+			//terminate
+			TerminateProcess(proc);
+		}
+	}
+
 	void ProcessorFCFS::KillRandomProcess() {
 		LOG(L"Attempting to kill a random process");
 
@@ -78,7 +109,7 @@ namespace core {
 			return;
 		}
 
-		int pid = RandomEngine::GetInt(1, m_Scheduler->GetLoadFileInfo()->proc_count);
+		int pid = RandomEngine::GetInt(1, m_Scheduler->GetLoadFileInfo()->data.proc_count);
 
 		LOGF(L"Chosen pid=%d", pid);
 
@@ -142,5 +173,34 @@ namespace core {
 	
 	void ProcessorFCFS::RegisterSigkillInfo(SigkillTimeInfo sigkill) {
 		ms_Sigkills.Enqueue(sigkill);
+	}
+
+	bool ProcessorFCFS::TryMigrate(Process*& proc) {
+		if (proc == 0) return false;
+		
+		//check if proc is forked
+		if (proc->IsForked()) return false;
+
+		LoadFileInfo* fileInfo = m_Scheduler->GetLoadFileInfo();
+		
+		//check for RR processors
+		if (fileInfo->data.num_processors_rr <= 0) return false;
+
+		//check for maxw constraint
+		int waitingTime = m_Scheduler->GetSimulationInfo()->GetTimestep() - proc->GetArrivalTime() - proc->GetTicks();
+		if (waitingTime <= fileInfo->data.maxw) return false;
+
+		//start migration
+		//remove proc
+		if (m_RunningProcess == proc) {
+			m_RunningProcess = 0;
+		}
+
+		m_Scheduler->MigrateProcess(proc, ProcessorType::RR);
+
+		//set null
+		proc = 0;
+
+		return true;
 	}
 }

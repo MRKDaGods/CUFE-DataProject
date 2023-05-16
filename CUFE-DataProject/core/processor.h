@@ -9,6 +9,7 @@ namespace core {
 	class Scheduler;
 	
 	enum class ProcessorType {
+		None,
 		FCFS,
 		SJF,
 		RR
@@ -46,6 +47,9 @@ namespace core {
 		/// Terminates a process (does not alter the processor state)
 		/// </summary>
 		void TerminateProcess(Process* proc);
+
+		// Attempt to migrate the process from this processor to another
+		virtual bool TryMigrate(Process*& proc);
 
 	public:
 		Processor(ProcessorType type, Scheduler* scheduler);

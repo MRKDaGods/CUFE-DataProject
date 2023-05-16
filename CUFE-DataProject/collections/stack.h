@@ -28,5 +28,8 @@ namespace collections
 		/// Is the stack empty?
 		/// </summary>
 		virtual bool IsEmpty() abstract;
+
+		// Length of stack
+		virtual int GetLength() abstract;
 	};
 }

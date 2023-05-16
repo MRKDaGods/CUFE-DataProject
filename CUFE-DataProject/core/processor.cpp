@@ -36,8 +36,15 @@ namespace core {
 		//update state to TRM
 		proc->SetState(ProcessState::TRM);
 
+		//we are not the owner anymore
+		proc->SetOwner(0);
+
 		//move process to trm list
 		m_Scheduler->NotifyProcessTerminated(proc);
+	}
+
+	bool Processor::TryMigrate(Process*& proc) {
+		return false;
 	}
 
 	void Processor::RunProcess(Process* proc) {
@@ -49,6 +56,9 @@ namespace core {
 
 		//process is now busy
 		m_State = ProcessorState::BUSY;
+
+		//set owner incase
+		proc->SetOwner(this);
 	}
 
 	void Processor::TerminateRunningProcess() {
@@ -72,6 +82,9 @@ namespace core {
 
 		//update state to BLK
 		m_RunningProcess->SetState(ProcessState::BLK);
+
+		//we are not the owner anymore
+		m_RunningProcess->SetOwner(0);
 
 		//move process to trm list
 		m_Scheduler->NotifyProcessBlocked(m_RunningProcess);
@@ -98,10 +111,13 @@ namespace core {
 
 	void Processor::QueueProcess(Process* proc) {
 		//increment timer
-		m_ConcurrentTimer += proc->GetCPUTime() - proc->GetTicks();
+		m_ConcurrentTimer += proc->GetRemainingTime();
 
 		//update state to RDY
 		proc->SetState(ProcessState::RDY);
+
+		//set owner
+		proc->SetOwner(this);
 	}
 
 	void Processor::Print(_STD wstringstream& stream) {

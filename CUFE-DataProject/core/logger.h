@@ -3,12 +3,16 @@
 #include "../common.h"
 #include "../ui/color.h"
 #include "../collections/linked_list.h"
+#include "../collections/linked_stack.h"
 
 #include <string>
 #include <mutex>
 
 #define LOG(msg) core::Logger::GetInstance()->Log(msg)
 #define LOGF(fmt, ...) { wchar_t __tmpBuf[100]; swprintf(__tmpBuf, fmt, __VA_ARGS__); LOG(__tmpBuf); }
+
+#define PUSHCOL(col) core::Logger::GetInstance()->PushColor(col)
+#define POPCOL() core::Logger::GetInstance()->PopColor()
 
 namespace core {
 	class Scheduler;
@@ -39,10 +43,8 @@ namespace core {
 		/// </summary>
 		Scheduler* m_Scheduler;
 
-		/// <summary>
-		/// Current log color
-		/// </summary>
-		_UI Color m_Color;
+		// Color stack
+		_COLLECTION LinkedStack<_UI Color> m_ColorStack;
 
 		/// <summary>
 		/// Log mutex
@@ -78,10 +80,11 @@ namespace core {
 		/// </summary>
 		void Log(_STD wstring msg);
 
-		/// <summary>
-		/// Sets a global color for the following logs
-		/// </summary>
-		void SetColor(_UI Color color);
+		// Pushes a new color to the stack
+		void PushColor(_UI Color color);
+
+		// Pops a color from the stack
+		void PopColor();
 
 		/// <summary>
 		/// Prevents any thread from accessing the logs (locks the mutex)

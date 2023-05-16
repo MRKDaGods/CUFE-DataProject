@@ -157,7 +157,7 @@ namespace core {
 		m_UI->DrawBoxFilled(0, TOOLBAR_HEIGHT + 1, VEC_INT_X(screenSize), VEC_INT_Y(screenSize), COL_BG(BLACK));
 
 		int w = 60;
-		int h = 50;
+		int h = 53;
 
 		int x = screenSize.x / 2.f - w / 2.f;
 		int y = screenSize.y / 2.f - h / 2.f;
@@ -188,7 +188,7 @@ namespace core {
 		y += 4;
 
 		//processors (respectively)
-		m_UI->DrawString(mid - 16, y, L"Processor Count (FCFS, SJF, RR)", COLS(COL_BG(BLACK), COL_FG(WHITE)));
+		m_UI->DrawString(mid - 19, y, L"Processor Count (FCFS, SJF, RR, EDF)", COLS(COL_BG(BLACK), COL_FG(WHITE)));
 		y += 1;
 
 		m_UI->DrawTextbox(mid - 20, y, 40, 2, m_InputFile.fcfs_count, COLS(COL_BG(BLACK), COL_FG(WHITE)));
@@ -196,6 +196,8 @@ namespace core {
 		m_UI->DrawTextbox(mid - 20, y, 40, 2, m_InputFile.sjf_count, COLS(COL_BG(BLACK), COL_FG(WHITE)));
 		y += 3;
 		m_UI->DrawTextbox(mid - 20, y, 40, 2, m_InputFile.rr_count, COLS(COL_BG(BLACK), COL_FG(WHITE)));
+		y += 3;
+		m_UI->DrawTextbox(mid - 20, y, 40, 2, m_InputFile.edf_count, COLS(COL_BG(BLACK), COL_FG(WHITE)));
 
 		y += 4;
 
@@ -216,11 +218,24 @@ namespace core {
 		y += 4;
 
 		//sig kill
-		m_UI->DrawString(mid - 9, y, L"Generate sigkills?", COLS(COL_BG(BLACK), COL_FG(WHITE)));
+		int xOffset = -10;
+
+		m_UI->DrawString(mid - 9 + xOffset, y, L"Generate sigkills?", COLS(COL_BG(BLACK), COL_FG(WHITE)));
 		y += 1;
 
-		if (m_UI->DrawButton(mid - 2, y, 4, 2, m_InputFile.generate_sigkills ? L"√" : L" ", COLS(COL_BG(BLACK), COL_FG(WHITE)))) {
+		if (m_UI->DrawButton(mid - 2 + xOffset, y, 4, 2, m_InputFile.generate_sigkills ? L"√" : L" ", COLS(COL_BG(BLACK), COL_FG(WHITE)))) {
 			m_InputFile.generate_sigkills = !m_InputFile.generate_sigkills;
+		}
+
+		y--;
+		xOffset = 10;
+
+		//enable edf
+		m_UI->DrawString(mid - 6 + xOffset, y, L"Enable EDF?", COLS(COL_BG(BLACK), COL_FG(WHITE)));
+		y += 1;
+
+		if (m_UI->DrawButton(mid - 2 + xOffset, y, 4, 2, m_InputFile.enable_edf ? L"√" : L" ", COLS(COL_BG(BLACK), COL_FG(WHITE)))) {
+			m_InputFile.enable_edf = !m_InputFile.enable_edf;
 		}
 
 		y += 4;
@@ -382,13 +397,14 @@ namespace core {
 			RenderLogs();
 		}
 
+		//keep these last, Z-index order
+		RenderMenu();
+
 		//test input dialog
 		if (m_ShowingInputGenDialog) {
 			RenderTestInputDialog();
 		}
 
-		//keep these last, Z-index order
-		RenderMenu();
 		RenderActionsToolbar();
 		RenderStatusbar();
 	}

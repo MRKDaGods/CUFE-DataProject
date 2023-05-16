@@ -129,6 +129,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="collections\array_list.h" />
+    <ClInclude Include="collections\binary_tree.h" />
     <ClInclude Include="collections\linked_list.h" />
     <ClInclude Include="collections\linked_priority_queue.h" />
     <ClInclude Include="collections\linked_queue.h" />

@@ -16,6 +16,7 @@ namespace core {
 		_STD wstring fcfs_count = L"5";
 		_STD wstring sjf_count = L"4";
 		_STD wstring rr_count = L"2";
+		_STD wstring edf_count = L"2";
 
 		_STD wstring rr_slice = L"3";
 		_STD wstring rtf = L"4";
@@ -24,6 +25,7 @@ namespace core {
 		_STD wstring fork = L"10";
 
 		bool generate_sigkills = true;
+		bool enable_edf = true;
 	};
 
 	void GenerateInputFile(InputFileModel* model);

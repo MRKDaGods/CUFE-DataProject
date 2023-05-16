@@ -24,12 +24,17 @@ namespace core {
 		}
 	}
 
-	Processor* Scheduler::GetProcessorWithShortestQueue() {
+	Processor* Scheduler::GetProcessorWithShortestQueue(ProcessorType processorType = ProcessorType::None) {
 		Processor* proc = *m_Processors[0];
 		int val = proc->GetConcurrentTimer(false);
 
 		for (int i = 1; i < m_Processors.GetLength(); i++) {
 			Processor* cur = *m_Processors[i];
+
+			if (processorType != ProcessorType::None && processorType != cur->GetProcessorType()) {
+				continue;
+			}
+
 			if (cur->GetConcurrentTimer(false) < val) {
 				proc = cur;
 				val = cur->GetConcurrentTimer(false);
@@ -90,14 +95,14 @@ namespace core {
 
 			LOGF(L"Processor time left=%d", processor->GetConcurrentTimer());
 
-			LOGF(L"IsDone=%s, HasIOEvent=%s", BOOL_TO_WSTR(runningProc->IsDone()), BOOL_TO_WSTR(runningProc->HasIOEvent(m_SimulationInfo.GetTimestep())));
+			LOGF(L"IsDone=%s, HasIOEvent=%s", BOOL_TO_WSTR(runningProc->IsDone()), BOOL_TO_WSTR(runningProc->HasIOEvent()));
 
 			//check if proc has finished executing
 			if (runningProc->IsDone()) {
 				LOG(L"Terminate current proc requested (isdone=true)");
 				processor->TerminateRunningProcess();
 			}
-			else if (runningProc->HasIOEvent(m_SimulationInfo.GetTimestep())) { //check for IO
+			else if (runningProc->HasIOEvent()) { //check for IO
 				LOG(L"Terminate current proc requested (hasioevent=true)");
 
 				//block process
@@ -120,7 +125,8 @@ namespace core {
 	void Scheduler::Update() {
 		int ts = m_SimulationInfo.GetTimestep();
 
-		Logger::GetInstance()->SetColor(ts % 2 == 0 ? COL(BLACK, WHITE) : COL(WHITE, BLACK));
+		//set log color
+		PUSHCOL(ts % 2 == 0 ? COL(BLACK, WHITE) : COL(WHITE, BLACK));
 
 		LOG(L"Scheduler update started");
 
@@ -158,20 +164,23 @@ namespace core {
 		m_SimulationInfo.NotifyUpdated();
 
 		//check if simulation has ended
-		if (m_TerminatedProcesses.GetLength() == m_LoadFileInfo.proc_count) {
+		if (m_TerminatedProcesses.GetLength() == m_LoadFileInfo.data.proc_count) {
 			LOG(L"Terminating scheduler...");
 
 			//done, stop the simulation
 			m_SimulationInfo.Stop();
 			m_View.NotifyStopped();
 		}
+
+		//pop logger color
+		POPCOL();
 	}
 
-	void Scheduler::Schedule(Process* proc) {
+	void Scheduler::Schedule(Process* proc, ProcessorType processorType) {
 		LOG(L"Scheduling process, pid=" + _STD to_wstring(proc->GetPID()));
 
 		//get processor with shortest queue
-		Processor* processor = GetProcessorWithShortestQueue();
+		Processor* processor = GetProcessorWithShortestQueue(processorType);
 		if (processor == 0) {
 			//processor is null? this should never happen
 			return;
@@ -245,25 +254,46 @@ namespace core {
 		m_LoadFileInfo = {
 			filename,
 			success,
-			data.rr_timeslice,
-			data.rtf,
-			data.maxw,
-			data.stl,
-			data.fork_prob,
-			data.proc_count,
+
+			//copy of deserialized data, DeserializerData::procs and DeserializerData::sigkills are invalid in this context
+			data
 		};
 	}
 
 	void Scheduler::NotifyProcessTerminated(Process* proc) {
-		wchar_t buf[100];
-		swprintf(buf, L"Terminated process notif, pid=%d", proc->GetPID());
-		LOG(buf);
+		LOGF(L"Terminated process notif, pid=%d", proc->GetPID());
 
 		//add process to TRM list
 		m_TerminatedProcesses.Add(proc->GetPID());
 
-		//find parent and notify them
-		proc->GetForkingData()->parent = 0;
+		ForkingData* forkingData = proc->GetForkingData();
+
+		if (forkingData->forgein_node) {
+			//remove myself from foreign tree
+			*forkingData->forgein_node = 0;
+		}
+
+		//kill my own children
+		//i love cookies
+		forkingData->Iterate([&](PROC_BT_NODE* node) {
+			Process* child = node->value;
+
+			//owner is not null here, must be FCFS
+			//sanity check
+			ProcessorFCFS* fcfs = dynamic_cast<ProcessorFCFS*>(child->GetOwner());
+			if (fcfs == 0) {
+				PUSHCOL(COL(RED, WHITE));
+				LOGF(L"Fatal error, forked proc owner isnt fcfs, pid=%d", child->GetPID());
+				POPCOL();
+
+				//todo: mark the children ORPH?
+
+				return;
+			}
+
+			//kill child
+			fcfs->KillProcess(child->GetPID());
+		});
 
 		//delete process
 		delete proc;
@@ -277,26 +307,51 @@ namespace core {
 	}
 
 	void Scheduler::ForkProcess(Process* parent) {
-		if (parent == 0) return; //parent must not be null for a forked process
+		if (parent == 0 || !parent->CanFork()) return; //parent must not be null for a forked process
 
-		ForkingData* parentForkingData = parent->GetForkingData();
-
-		//mark process forked
-		parentForkingData->has_forked = true;
+		LOGF(L"Forking new process, parent pid=%d", parent->GetPID());
 
 		//create new process
-		Process* child = new Process(m_LoadFileInfo.proc_count++,
+		Process* child = new Process(++m_LoadFileInfo.data.proc_count,
 			m_SimulationInfo.GetTimestep(),
 			parent->GetRemainingTime(),
 			0,
 			0);
 
+		LOGF(L"Child proc pid=%d", child->GetPID());
+
 		//assign child and parent info
-		parentForkingData->child = child;
-		child->GetForkingData()->parent = parent;
+		ForkingData* parentForkingData = parent->GetForkingData();
+		ForkingData* childForkingData = child->GetForkingData();
+
+		parentForkingData->fork_tree.InsertForeign(&parent,
+			childForkingData->fork_tree.GetRoot(),
+			&childForkingData->forgein_node);
+
+		//debug
+		{
+			int numForked = 0;
+			parentForkingData->Iterate([&numForked](PROC_BT_NODE* node) {
+				numForked++;
+			});
+
+			LOGF(L"Number of forked children=%d", numForked);
+		}
 
 		//schedule child process
-		Schedule(child);
+		Schedule(child, ProcessorType::FCFS);
+	}
+
+	void Scheduler::MigrateProcess(Process* proc, ProcessorType targetProcessorType) {
+		//caller has already ensured that targetProcessorType exists
+		if (proc == 0) return;
+
+		PUSHCOL(COL(DARK_GREEN, WHITE));
+		LOGF(L"Migrating proc %d to %s", proc->GetPID(), ProcessorTypeToWString(targetProcessorType).c_str());
+		POPCOL();
+
+		//schedule to some other processor
+		Schedule(proc, targetProcessorType);
 	}
 
 	void Scheduler::Print(_STD wstringstream& stream) {
