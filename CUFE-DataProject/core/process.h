@@ -55,6 +55,9 @@ namespace core {
 		int m_ResponseTime; // RT
 		int m_CpuTime; // CT
 		int m_TerminationTime; // TT
+		
+		// Process absolute deadline (EDF)
+		int m_Deadline;
 
 		/// <summary>
 		/// Realtime execution timer
@@ -77,7 +80,7 @@ namespace core {
 		friend _STD wstringstream& operator<<(_STD wstringstream& stream, Process* proc);
 
 	public:
-		Process(int pid, int at, int ct, ProcessIOData* ioData = 0, int ioDataSz = 0);
+		Process(int pid, int at, int ct, int deadline, ProcessIOData* ioData = 0, int ioDataSz = 0);
 
 		/// <summary>
 		/// Returns the process id
@@ -93,6 +96,9 @@ namespace core {
 		/// (CT) Returns the CpuTime
 		/// </summary>
 		int GetCPUTime();
+
+		// The process absolute deadline
+		int GetDeadline();
 
 		/// <summary>
 		/// (TRT) Total time a proc spends in the system from its arrival to its termination
@@ -184,14 +190,30 @@ namespace collections {
 		void Print(_STD wstringstream& stream);
 	};
 
-	struct ProcessPriority {
+	// Priority based on smaller RemainingTime
+	struct ProcessRemainingTimePriority {
 		bool operator()(_CORE Process* p1, _CORE Process* p2) {
 			return p1->GetRemainingTime() < p2->GetRemainingTime();
 		}
 	};
 
-	class ProcessLinkedPriorityQueue : public LinkedPriorityQueue<_CORE Process*, ProcessPriority> {
+	// Priority based on earlier deadline
+	struct ProcessDeadlinePriority {
+		bool operator()(_CORE Process* p1, _CORE Process* p2) {
+			return p1->GetDeadline() < p2->GetDeadline();
+		}
+	};
+
+	template<typename Comparer>
+	class ProcessLinkedPriorityQueue : public LinkedPriorityQueue<_CORE Process*, Comparer> {
 	public:
-		void Print(_STD wstringstream& stream);
+		void Print(_STD wstringstream& stream) {
+			auto list = &(LinkedPriorityQueue<_CORE Process*, Comparer>::m_LinkedList);
+			if (list->GetHead() == 0) return;
+
+			for (LinkedListNode<_CORE Process*>* node = list->GetHead(); node; node = node->next) {
+				stream << node->value << L", ";
+			}
+		}
 	};
 }

@@ -139,6 +139,9 @@ namespace core {
 
 		case ProcessorType::RR:
 			return L"RR";
+
+		case ProcessorType::EDF:
+			return L"EDF";
 		}
 
 		return L"";

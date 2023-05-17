@@ -2,7 +2,7 @@
 #include "processor.h"
 
 namespace core {
-	Process::Process(int pid, int at, int ct, ProcessIOData* ioData, int ioDataSz) : m_PID(pid), m_ArrivalTime(at), m_CpuTime(ct), 
+	Process::Process(int pid, int at, int ct, int deadline, ProcessIOData* ioData, int ioDataSz) : m_PID(pid), m_ArrivalTime(at), m_CpuTime(ct), m_Deadline(deadline),
 		m_ResponseTime(0), m_TerminationTime(0), m_Ticks(0), m_Owner(0), m_State(ProcessState::NEW) {
 		//check for and enqueue io data
 		if (ioData != 0 && ioDataSz > 0) {
@@ -30,6 +30,10 @@ namespace core {
 
 	int Process::GetCPUTime() {
 		return m_CpuTime;
+	}
+
+	int Process::GetDeadline() {
+		return m_Deadline;
 	}
 
 	int Process::GetTurnaroundDuration() {
@@ -148,14 +152,6 @@ namespace collections {
 	}
 
 	void ProcessLinkedQueue::Print(_STD wstringstream& stream) {
-		if (m_LinkedList.GetHead() == 0) return;
-
-		for (LinkedListNode<_CORE Process*>* node = m_LinkedList.GetHead(); node; node = node->next) {
-			stream << node->value << L", ";
-		}
-	}
-
-	void ProcessLinkedPriorityQueue::Print(_STD wstringstream& stream) {
 		if (m_LinkedList.GetHead() == 0) return;
 
 		for (LinkedListNode<_CORE Process*>* node = m_LinkedList.GetHead(); node; node = node->next) {

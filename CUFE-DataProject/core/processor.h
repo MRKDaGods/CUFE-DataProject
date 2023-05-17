@@ -13,7 +13,8 @@ namespace core {
 		None,
 		FCFS,
 		SJF,
-		RR
+		RR,
+		EDF
 	};
 
 	// Simple handle containing a process to be stolen, and a steal delegate

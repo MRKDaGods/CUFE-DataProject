@@ -56,21 +56,25 @@ namespace core {
 		for (int i = 0; i < procCount; i++) {
 			//increment at by a random val
 			at += RandomEngine::GetInt(0, 7);
-			
+
 			int procAt = at;
 			int procPid = pid++;
 
 			int procCpuTime = RandomEngine::GetInt(10, 300);
 
-			//int procDeadline = procAt + RandomEngine::GetInt(5, procCpuTime);
+			int procDeadline = procAt + RandomEngine::GetInt(5, procCpuTime);
 
 			int ioCount = RandomEngine::GetInt(0, 10);
 
 			file << procAt << '\t'
 				<< procPid << '\t'
-				<< procCpuTime << '\t'
-				//<< procDeadline << '\t'
-				<< ioCount << '\t';
+				<< procCpuTime << '\t';
+
+			if (model->enable_edf) {
+				file << procDeadline << '\t';
+			}
+
+			file << ioCount << '\t';
 
 			int ioBuf = 0;
 			for (int j = 0; j < ioCount; j++) {
@@ -94,7 +98,7 @@ namespace core {
 			while (true) {
 				//time increments max is max arrival time / 10
 				time = time + RandomEngine::GetInt(0, at / 10);
-				if (time >= at) break;
+				if (time >= at || pids.size() >= procCount) break;
 
 				//choose pid to be killed
 				int killedPid;

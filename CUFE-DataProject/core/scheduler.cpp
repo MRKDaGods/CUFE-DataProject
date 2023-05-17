@@ -3,6 +3,7 @@
 #include "processor_fcfs.h"
 #include "processor_sjf.h"
 #include "processor_rr.h"
+#include "processor_edf.h"
 #include "random_engine.h"
 
 namespace core {
@@ -345,6 +346,12 @@ namespace core {
 			}
 
 			LOGF(L"Created %d RR", data.num_processors_rr);
+
+			for (int i = 0; i < data.num_processors_edf; i++) {
+				m_Processors.Add(new ProcessorEDF(this));
+			}
+
+			LOGF(L"Created %d EDF", data.num_processors_edf);
 
 			//enqueue sigkills
 			for (int i = 0; i < deserializer.GetSigkillCount(); i++) {

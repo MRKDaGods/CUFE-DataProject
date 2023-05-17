@@ -36,7 +36,8 @@ namespace core {
         //processors info
         m_Stream >> data.num_processors_fcfs
             >> data.num_processors_sjf
-            >> data.num_processors_rr;
+            >> data.num_processors_rr
+            >> data.num_processors_edf;
 
         m_Stream >> data.rr_timeslice;
 
@@ -62,11 +63,13 @@ namespace core {
             int at;
             int pid;
             int ct;
+            int deadline;
             int ioCount;
 
             m_Stream >> at
                 >> pid
                 >> ct
+                >> deadline
                 >> ioCount;
 
             //temporary alloc an array for io data
@@ -95,7 +98,7 @@ namespace core {
             }
 
             //alloc new proc
-            Process* proc = new Process(pid, at, ct, procIOData, ioCount);
+            Process* proc = new Process(pid, at, ct, deadline, procIOData, ioCount);
 
             //delete ioData array
             delete[] procIOData;
