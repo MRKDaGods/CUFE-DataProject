@@ -1,5 +1,9 @@
 #include "simulation_info.h"
 
+#pragma comment(lib, "Winmm.lib")
+
+#include <Windows.h>
+
 namespace core {
 	SimulationInfo::SimulationInfo() : m_Mode(SimulationMode::Interactive), m_State(SimulationState::Stopped), m_Timestep(0), m_Dirty(false) {
 		//we are initially in interactive mode and are stopped
@@ -17,19 +21,24 @@ namespace core {
 		return m_Timestep;
 	}
 
-	bool SimulationInfo::CanUpdateScheduler() {
+	bool SimulationInfo::CanUpdateScheduler(int* sleepTime) {
 		if (m_State != SimulationState::Playing) return false;
 
 		switch (m_Mode)
 		{
-		case core::SimulationMode::Interactive:
+		case core::SimulationMode::Interactive: //keep the 10ms
 			return m_Dirty;
 
-		case core::SimulationMode::StepByStep:
-			break;
+		case core::SimulationMode::StepByStep: //keep the 10ms
+			Sleep(1000); //sleep for 1s
+			IncrementTimestep();
+			return true;
 
 		case core::SimulationMode::Silent:
-			break;
+			*sleepTime = 0; //dont sleep
+
+			IncrementTimestep();
+			return true;
 		}
 
 		return false;
@@ -41,6 +50,9 @@ namespace core {
 
 		m_State = SimulationState::Playing;
 		m_Dirty = true;
+
+		//ANKARA MESSI
+		PlaySoundA("sounds\\messi.wav", 0, SND_FILENAME | SND_ASYNC);
 
 		return true;
 	}

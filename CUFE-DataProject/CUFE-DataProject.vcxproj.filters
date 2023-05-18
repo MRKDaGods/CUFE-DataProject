@@ -99,6 +99,12 @@
     <ClInclude Include="core\processor_edf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="core\statistics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\lock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -150,6 +156,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="core\processor_edf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="core\statistics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\lock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

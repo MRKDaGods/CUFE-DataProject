@@ -1,6 +1,7 @@
 #include "input_generator.h"
 #include "random_engine.h"
 #include "logger.h"
+#include "../common.h"
 
 #include <iostream>
 #include <fstream>
@@ -25,6 +26,12 @@ namespace core {
 		int stl = _STD stoi(model->stl);
 		int fork = _STD stoi(model->fork);
 
+#ifdef OVERRIDE_OVERHEAT_DELAY
+		int overheat = OVERHEAT_DELAY;
+#else
+		int overheat = _STD stoi(model->overheat);
+#endif
+
 		//output
 		_STD ofstream file(model->filename);
 
@@ -45,7 +52,8 @@ namespace core {
 		file << rtf << '\t'
 			<< maxw << '\t'
 			<< stl << '\t'
-			<< fork << '\n';
+			<< fork << '\t'
+			<< overheat << '\n';
 
 		file << procCount << '\n';
 
@@ -55,12 +63,12 @@ namespace core {
 
 		for (int i = 0; i < procCount; i++) {
 			//increment at by a random val
-			at += RandomEngine::GetInt(0, 7);
+			at += RandomEngine::GetInt(0, 2);
 
 			int procAt = at;
 			int procPid = pid++;
 
-			int procCpuTime = RandomEngine::GetInt(10, 300);
+			int procCpuTime = RandomEngine::GetInt(5, 30);
 
 			int procDeadline = procAt + RandomEngine::GetInt(5, procCpuTime);
 
@@ -80,7 +88,7 @@ namespace core {
 			for (int j = 0; j < ioCount; j++) {
 				ioBuf += RandomEngine::GetInt(0, procCpuTime);
 				int ioR = ioBuf;
-				int ioD = RandomEngine::GetInt(5, 20);
+				int ioD = RandomEngine::GetInt(1, 10);
 
 				char buf[50];
 				sprintf(buf, "(%d,%d)%s", ioR, ioD, j < ioCount - 1 ? "," : "");

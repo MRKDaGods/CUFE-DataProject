@@ -16,11 +16,13 @@ int main() {
 	LOG(L"Initializing...");
 
 	while (true) {
-		if (sched.GetSimulationInfo()->CanUpdateScheduler()) {
+		int sleepTime = 10; //by default sleep for 10ms
+
+		if (sched.GetSimulationInfo()->CanUpdateScheduler(&sleepTime)) {
 			sched.Update();
 		}
 
-		Sleep(10);
+		Sleep(sleepTime);
 	}
 
 	//clean up random engine

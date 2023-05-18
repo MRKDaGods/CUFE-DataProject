@@ -152,9 +152,11 @@
     <ClInclude Include="core\deserializer.h" />
     <ClInclude Include="core\random_engine.h" />
     <ClInclude Include="core\processor_rr.h" />
+    <ClInclude Include="core\statistics.h" />
     <ClInclude Include="ui\gui.h" />
     <ClInclude Include="ui\color.h" />
     <ClInclude Include="ui\renderer.h" />
+    <ClInclude Include="utils\lock.h" />
     <ClInclude Include="utils\vector2.h" />
   </ItemGroup>
   <ItemGroup>
@@ -171,9 +173,11 @@
     <ClCompile Include="core\simulation_info.cpp" />
     <ClCompile Include="core\random_engine.cpp" />
     <ClCompile Include="core\processor_rr.cpp" />
+    <ClCompile Include="core\statistics.cpp" />
     <ClCompile Include="ui\gui.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ui\renderer.cpp" />
+    <ClCompile Include="utils\lock.cpp" />
     <ClCompile Include="utils\vector2.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

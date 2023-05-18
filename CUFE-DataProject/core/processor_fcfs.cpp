@@ -46,9 +46,9 @@ namespace core {
 
 		LOG(L"Looking for sigkill");
 
-		//process sigkill for FCFS
+		//process sigkill for FCFS -- many sigkills can occur at the same timestep
 		SigkillTimeInfo sigkill;
-		if (ms_Sigkills.Peek(&sigkill) && sigkill.time == m_Scheduler->GetSimulationInfo()->GetTimestep()) {
+		while (ms_Sigkills.Peek(&sigkill) && sigkill.time == m_Scheduler->GetSimulationInfo()->GetTimestep()) {
 			//dequeue sigkill
 			ms_Sigkills.Dequeue();
 
@@ -87,6 +87,9 @@ namespace core {
 		if (m_RunningProcess != 0 && m_RunningProcess->GetPID() == pid) {
 			//yep it is
 			TerminateRunningProcess();
+
+			//increment statistic
+			m_Scheduler->GetStatistics()->AddStatistic(StatisticType::Kill);
 			return;
 		}
 
@@ -98,6 +101,9 @@ namespace core {
 
 			//terminate
 			TerminateProcess(proc);
+
+			//increment statistic
+			m_Scheduler->GetStatistics()->AddStatistic(StatisticType::Kill);
 		}
 	}
 
@@ -194,6 +200,17 @@ namespace core {
 
 		return true;
 	}
+
+	bool ProcessorFCFS::HasOrphans() {
+		if (m_RunningProcess && m_RunningProcess->IsForked()) return true;
+
+		for (int i = 0; i < m_ReadyProcesses.GetLength(); i++) {
+			Process* proc = *m_ReadyProcesses[i];
+			if (proc->IsForked()) return true;
+		}
+
+		return false;
+	}
 	
 	void ProcessorFCFS::RegisterSigkillInfo(SigkillTimeInfo sigkill) {
 		ms_Sigkills.Enqueue(sigkill);
@@ -214,17 +231,48 @@ namespace core {
 		int waitingTime = m_Scheduler->GetSimulationInfo()->GetTimestep() - proc->GetArrivalTime() - proc->GetTicks();
 		if (waitingTime <= fileInfo->data.maxw) return false;
 
+		//check for overheat
+		if (m_Scheduler->GetNumberOfActiveProcessors(ProcessorType::RR) == 0) return false;
+
 		//start migration
+
+		//decrement timer
+		DecrementTimer(proc);
+
+		//set idle for now
+		m_State = ProcessorState::IDLE;
+
+		m_Scheduler->MigrateProcess(proc, ProcessorType::RR);
+
+		//set null
 		//remove proc
 		if (m_RunningProcess == proc) {
 			m_RunningProcess = 0;
 		}
 
-		m_Scheduler->MigrateProcess(proc, ProcessorType::RR);
-
-		//set null
 		proc = 0;
 
 		return true;
+	}
+
+	void ProcessorFCFS::MigrateAllProcesses() {
+		if (m_RunningProcess != 0) {
+			DecrementTimer(m_RunningProcess);
+			m_Scheduler->Schedule(m_RunningProcess, ProcessorType::None, this);
+
+			m_RunningProcess = 0;
+		}
+
+		while (m_ReadyProcesses.GetLength() > 0) {
+			Process* proc = *m_ReadyProcesses[0];
+			
+			DecrementTimer(proc);
+			m_ReadyProcesses.Remove(proc);
+			m_Scheduler->Schedule(proc, ProcessorType::None, this);
+		}
+	}
+
+	bool ProcessorFCFS::IsBusy() {
+		return m_RunningProcess || m_ReadyProcesses.GetLength() > 0;
 	}
 }

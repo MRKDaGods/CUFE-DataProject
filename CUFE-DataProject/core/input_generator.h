@@ -23,6 +23,7 @@ namespace core {
 		_STD wstring maxw = L"20";
 		_STD wstring stl = L"100";
 		_STD wstring fork = L"10";
+		_STD wstring overheat = L"10";
 
 		bool generate_sigkills = true;
 		bool enable_edf = true;

@@ -22,8 +22,14 @@ namespace core {
 		void ProcessSigkill(int pid);
 
 	protected:
-		// Attempt to migrate the process from this processor to another
+		/// Attempt to migrate the process from this processor to another
 		virtual bool TryMigrate(Process*& proc) override;
+
+		/// Migrates all the processes to other processors
+		virtual void MigrateAllProcesses() override;
+
+		/// Is the processor busy?
+		virtual bool IsBusy() override;
 
 	public:
 		ProcessorFCFS(Scheduler* scheduler);
@@ -47,6 +53,9 @@ namespace core {
 
 		// Returns a steal handle for a process, if applicable
 		virtual bool GetStealHandle(StealHandle* stealHandle) override;
+
+		/// Does the processor contain orphans?
+		bool HasOrphans();
 
 		/// <summary>
 		/// Queues a process sigkill

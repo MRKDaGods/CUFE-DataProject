@@ -3,13 +3,14 @@
 
 namespace core {
 	Process::Process(int pid, int at, int ct, int deadline, ProcessIOData* ioData, int ioDataSz) : m_PID(pid), m_ArrivalTime(at), m_CpuTime(ct), m_Deadline(deadline),
-		m_ResponseTime(0), m_TerminationTime(0), m_Ticks(0), m_Owner(0), m_State(ProcessState::NEW) {
+		m_ResponseTime(-1), m_TerminationTime(0), m_TotalIOTime(0), m_Ticks(0), m_Owner(0), m_State(ProcessState::NEW) {
 		//check for and enqueue io data
 		if (ioData != 0 && ioDataSz > 0) {
 			for (int i = 0; i < ioDataSz; i++) {
 				m_IODataQueue.Enqueue(ioData[i]);
 
 				//caller is responsible for deleting ioData
+				m_TotalIOTime += ioData[i].duration;
 			}
 		}
 
@@ -18,6 +19,9 @@ namespace core {
 
 		//create root
 		m_ForkingData.fork_tree.Insert(0, this);
+
+		//init dynamic metadata
+		memset(&m_DynamicMetadata, 0, sizeof(ProcessDynamicMetadata));
 	}
 
 	int Process::GetPID() {
@@ -28,6 +32,10 @@ namespace core {
 		return m_ArrivalTime;
 	}
 
+	int Process::GetResponseTime() {
+		return m_ResponseTime;
+	}
+
 	int Process::GetCPUTime() {
 		return m_CpuTime;
 	}
@@ -36,12 +44,24 @@ namespace core {
 		return m_Deadline;
 	}
 
+	int Process::GetTerminationTime() {
+		return m_TerminationTime;
+	}
+
+	void Process::SetTerminationTime(int tt) {
+		m_TerminationTime = tt;
+	}
+
 	int Process::GetTurnaroundDuration() {
 		return m_TerminationTime - m_ArrivalTime;
 	}
 
 	int Process::GetWaitingTime() {
 		return GetTurnaroundDuration() - m_CpuTime;
+	}
+
+	int Process::GetTotalIOTime() {
+		return m_TotalIOTime;
 	}
 
 	int Process::GetTicks() {
@@ -64,8 +84,13 @@ namespace core {
 		m_State = state;
 	}
 
-	void Process::Tick() {
+	void Process::Tick(int timestep) {
 		m_Ticks++;
+
+		//check for response time
+		if (m_ResponseTime == -1) {
+			m_ResponseTime = timestep - m_ArrivalTime;
+		}
 	}
 
 	bool Process::IsDone() {
@@ -104,6 +129,10 @@ namespace core {
 	bool Process::IsForked() {
 		//we are forked if our foreign node isnt null
 		return m_ForkingData.forgein_node != 0;
+	}
+
+	ProcessDynamicMetadata* Process::GetDynamicMetadata() {
+		return &m_DynamicMetadata;
 	}
 
 	_STD wstringstream& operator<<(_STD wstringstream& stream, Process* proc) {

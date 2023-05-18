@@ -45,7 +45,8 @@ namespace core {
         m_Stream >> data.rtf
             >> data.maxw
             >> data.stl
-            >> data.fork_prob;
+            >> data.fork_prob
+            >> data.overheat_delay;
 
         //process info
         m_Stream >> data.proc_count;

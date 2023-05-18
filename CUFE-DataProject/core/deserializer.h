@@ -36,6 +36,7 @@ namespace core {
 		int maxw;
 		int stl;
 		int fork_prob;
+		int overheat_delay;
 
 		//number of processes
 		int proc_count;

@@ -17,7 +17,7 @@ namespace core {
 		EDF
 	};
 
-	// Simple handle containing a process to be stolen, and a steal delegate
+	/// Simple handle containing a process to be stolen, and a steal delegate
 	struct StealHandle {
 		// Steal applicable process
 		Process* process;
@@ -37,6 +37,9 @@ namespace core {
 		/// Timer to keep track of how long processes are going to run for
 		/// </summary>
 		int m_ConcurrentTimer;
+
+		/// Time spent per state
+		int m_StateTimers[3];
 	
 	protected:
 		/// <summary>
@@ -59,8 +62,13 @@ namespace core {
 		/// </summary>
 		void TerminateProcess(Process* proc);
 
-		// Attempt to migrate the process from this processor to another
+		/// Attempt to migrate the process from this processor to another
 		virtual bool TryMigrate(Process*& proc);
+
+		/// Migrates all the processes to other processors
+		virtual void MigrateAllProcesses() abstract;
+
+		virtual bool IsBusy() abstract;
 
 	public:
 		Processor(ProcessorType type, Scheduler* scheduler);
@@ -79,6 +87,9 @@ namespace core {
 		/// Returns the current processor state
 		/// </summary>
 		ProcessorState GetState();
+
+		/// Sets the processor state
+		void SetState(ProcessorState state);
 
 		/// <summary>
 		/// Returns the currently running process
@@ -121,13 +132,31 @@ namespace core {
 		/// </summary>
 		virtual void RequeueRunningProcess();
 
-		// Returns a steal handle for a process, if applicable
+		/// Returns a steal handle for a process, if applicable
 		virtual bool GetStealHandle(StealHandle* stealHandle) abstract;
 
 		/// <summary>
 		/// Prints processor data into stream
 		/// </summary>
 		virtual void Print(_STD wstringstream& stream);
+
+		/// Updates the current state timer
+		void UpdateStateTimer();
+
+		/// Returns the applicable time for the specified state
+		int GetStateTime(ProcessorState state);
+
+		/// Returns the processor load
+		float GetProcessorLoad();
+
+		/// Returns the processor utilization
+		float GetProcessorUtilization();
+
+		/// Resets the specified state's timer
+		void ResetStateTimer(ProcessorState state);
+
+		/// Checks overheat status
+		void CheckOverheat();
 	};
 
 	/// <summary>

@@ -46,6 +46,14 @@ namespace core {
 		void Iterate(_STD function<void(PROC_BT_NODE*)> iterator);
 	};
 
+	struct ProcessDynamicMetadata {
+		// Has the process been migrated before?
+		bool migrated;
+
+		// Has the process been stolen before?
+		bool stolen;
+	};
+
 	class Process {
 	private:
 		// Process unique id
@@ -58,6 +66,9 @@ namespace core {
 		
 		// Process absolute deadline (EDF)
 		int m_Deadline;
+
+		// Total time taken by IO
+		int m_TotalIOTime;
 
 		/// <summary>
 		/// Realtime execution timer
@@ -77,6 +88,9 @@ namespace core {
 		// Forking related info
 		ForkingData m_ForkingData;
 
+		// Some dynamic metadata
+		ProcessDynamicMetadata m_DynamicMetadata;
+
 		friend _STD wstringstream& operator<<(_STD wstringstream& stream, Process* proc);
 
 	public:
@@ -92,6 +106,9 @@ namespace core {
 		/// </summary>
 		int GetArrivalTime();
 
+		/// Returns the response time (RT)
+		int GetResponseTime();
+
 		/// <summary>
 		/// (CT) Returns the CpuTime
 		/// </summary>
@@ -99,6 +116,12 @@ namespace core {
 
 		// The process absolute deadline
 		int GetDeadline();
+
+		// Returns the process termination time (TT)
+		int GetTerminationTime();
+
+		// Sets the termination time
+		void SetTerminationTime(int tt);
 
 		/// <summary>
 		/// (TRT) Total time a proc spends in the system from its arrival to its termination
@@ -109,6 +132,9 @@ namespace core {
 		/// (WT) Total time a proc spends in the system not being executed by the CPU
 		/// </summary>
 		int GetWaitingTime();
+
+		// Returns the total time taken by IO for this process
+		int GetTotalIOTime();
 
 		/// <summary>
 		/// Returns the total process ticks
@@ -134,7 +160,7 @@ namespace core {
 		/// <summary>
 		/// Increments the ticks
 		/// </summary>
-		void Tick();
+		void Tick(int timestep);
 
 		/// <summary>
 		/// Has the process finished executing?
@@ -171,6 +197,9 @@ namespace core {
 
 		// Is the process a forked one?
 		bool IsForked();
+
+		// Returns the dynamic metadata
+		ProcessDynamicMetadata* GetDynamicMetadata();
 	};
 }
 
@@ -206,12 +235,14 @@ namespace collections {
 
 	template<typename Comparer>
 	class ProcessLinkedPriorityQueue : public LinkedPriorityQueue<_CORE Process*, Comparer> {
+	protected:
+		using LinkedPriorityQueue<_CORE Process*, Comparer>::m_LinkedList;
+
 	public:
 		void Print(_STD wstringstream& stream) {
-			auto list = &(LinkedPriorityQueue<_CORE Process*, Comparer>::m_LinkedList);
-			if (list->GetHead() == 0) return;
+			if (m_LinkedList.GetHead() == 0) return;
 
-			for (LinkedListNode<_CORE Process*>* node = list->GetHead(); node; node = node->next) {
+			for (LinkedListNode<_CORE Process*>* node = m_LinkedList.GetHead(); node; node = node->next) {
 				stream << node->value << L", ";
 			}
 		}

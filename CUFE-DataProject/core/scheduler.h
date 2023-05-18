@@ -5,12 +5,14 @@
 #include "../collections/linked_list.h"
 #include "../collections/array_list.h"
 #include "../collections/linked_queue.h"
+#include "../utils/lock.h"
 #include "processor.h"
 #include "process.h"
 #include "simulation_info.h"
 #include "scheduler_view.h"
 #include "deserializer.h"
 #include "logger.h"
+#include "statistics.h"
 
 #include <string>
 
@@ -92,10 +94,16 @@ namespace core {
 		/// </summary>
 		Logger m_Logger;
 
+		// Scheduler statistics
+		Statistics m_Statistics;
+
+		// Sched lock
+		_UTIL Lock m_SchedulerLock;
+
 		/// <summary>
 		/// Returns the processor with the shortest queue
 		/// </summary>
-		Processor* GetProcessorWithShortestQueue(ProcessorType processorType);
+		Processor* GetProcessorWithShortestQueue(ProcessorType processorType = ProcessorType::None, Processor* exclude = 0);
 
 		/// <summary>
 		/// Monitors the IO mutex
@@ -107,10 +115,10 @@ namespace core {
 		/// </summary>
 		void UpdateProcessor(Processor* processor);
 
-		// Terminates the scheduler
+		/// Terminates the scheduler
 		void Terminate();
 
-		// Checks for work stealing, and balances the load
+		/// Checks for work stealing, and balances the load
 		void UpdateWorkStealing();
 
 	public:
@@ -122,10 +130,14 @@ namespace core {
 		/// </summary>
 		LoadFileInfo* GetLoadFileInfo();
 
-		/// <summary>
-		/// Simulation related info
-		/// </summary>
+		// Simulation related info
 		SimulationInfo* GetSimulationInfo();
+
+		// The scheduler statistics
+		Statistics* GetStatistics();
+
+		// The lock owned by the scheduler
+		_UTIL Lock* GetSchedulerLock();
 
 		/// <summary>
 		/// Updates to the next frame
@@ -135,7 +147,7 @@ namespace core {
 		/// <summary>
 		/// Schedules a process to be ran on a processor
 		/// </summary>
-		void Schedule(Process* proc, ProcessorType processorType = ProcessorType::None);
+		void Schedule(Process* proc, ProcessorType processorType = ProcessorType::None, Processor* exclude = 0);
 
 		/// <summary>
 		/// Advances the timestep, if state is playing and in interactive mode
@@ -159,11 +171,20 @@ namespace core {
 		/// </summary>
 		void NotifyProcessBlocked(Process* proc);
 
-		// Forks a new process
+		/// Forks a new process
 		void ForkProcess(Process* parent);
 
-		// Migrates a process to another processor
+		/// Migrates a process to another processor
 		void MigrateProcess(Process* proc, ProcessorType targetProcessorType);
+
+		/// Can a processor of specified type overheat given the current context?
+		bool CanProcessorOverheat(ProcessorType type);
+
+		/// Returns the number of non suspended processors of the specified type
+		int GetNumberOfActiveProcessors(ProcessorType type);
+
+		/// Toolbar summary text
+		_STD wstring GetStatusbarText();
 
 		/// <summary>
 		/// Prints info from scheduler into the stream

@@ -42,6 +42,9 @@ namespace core {
 		/// <summary>
 		/// No process to execute
 		/// </summary>
-		IDLE
+		IDLE,
+
+		/// Processor is temporarily suspended
+		STOP
 	};
 }

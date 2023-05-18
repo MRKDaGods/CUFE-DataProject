@@ -1,4 +1,5 @@
 #include "processor_sjf.h"
+#include "scheduler.h"
 
 namespace core {
 	ProcessorSJF::ProcessorSJF(Scheduler* scheduler) : Processor(ProcessorType::SJF, scheduler) {
@@ -56,5 +57,24 @@ namespace core {
 		};
 
 		return true;
+	}
+
+	void ProcessorSJF::MigrateAllProcesses() {
+		if (m_RunningProcess != 0) {
+			DecrementTimer(m_RunningProcess);
+			m_Scheduler->Schedule(m_RunningProcess, ProcessorType::None, this);
+
+			m_RunningProcess = 0;
+		}
+
+		Process* proc;
+		while (m_ReadyProcesses.Dequeue(&proc)) {
+			DecrementTimer(proc);
+			m_Scheduler->Schedule(proc, ProcessorType::None, this);
+		}
+	}
+
+	bool ProcessorSJF::IsBusy() {
+		return m_RunningProcess || m_ReadyProcesses.GetLength() > 0;
 	}
 }

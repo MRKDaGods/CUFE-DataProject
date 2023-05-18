@@ -7,7 +7,7 @@
 #include "random_engine.h"
 
 namespace core {
-	Scheduler::Scheduler() : m_View(this, &m_UI), m_Logger(50, this) {
+	Scheduler::Scheduler() : m_View(this, &m_UI), m_Logger(50, this), m_Statistics(this) {
 		//initialize ui controller
 		m_UI.Initialize(APP_NAME, _UTIL Vector2(APP_SIZE_WIDTH, APP_SIZE_HEIGHT), _STD bind(&SchedulerView::UICallback, &m_View));
 
@@ -25,18 +25,23 @@ namespace core {
 		}
 	}
 
-	Processor* Scheduler::GetProcessorWithShortestQueue(ProcessorType processorType = ProcessorType::None) {
-		Processor* proc = *m_Processors[0];
-		int val = proc->GetConcurrentTimer(false);
+	Processor* Scheduler::GetProcessorWithShortestQueue(ProcessorType processorType, Processor* exclude) {
+		Processor* proc = 0;
+		int val = 0;
 
-		for (int i = 1; i < m_Processors.GetLength(); i++) {
+		for (int i = 0; i < m_Processors.GetLength(); i++) {
 			Processor* cur = *m_Processors[i];
 
 			if (processorType != ProcessorType::None && processorType != cur->GetProcessorType()) {
 				continue;
 			}
 
-			if (cur->GetConcurrentTimer(false) < val) {
+			//if we are suspended, we cant queue obviously
+			if (cur->GetState() == ProcessorState::STOP || cur == exclude) {
+				continue;
+			}
+
+			if (proc == 0 || cur->GetConcurrentTimer(false) < val) {
 				proc = cur;
 				val = cur->GetConcurrentTimer(false);
 			}
@@ -85,9 +90,25 @@ namespace core {
 	void Scheduler::UpdateProcessor(Processor* processor) {
 		//currently running process is not null, check for completion
 
+		//only update processor if it's not in STOP
+		if (processor->GetState() == ProcessorState::STOP) {
+			//check stop timer
+			processor->UpdateStateTimer();
+
+			//reset timer if we're done
+			if (processor->GetStateTime(ProcessorState::STOP) >= m_LoadFileInfo.data.overheat_delay) {
+				processor->ResetStateTimer(ProcessorState::STOP);
+
+				//go back to idle
+				processor->SetState(ProcessorState::IDLE);
+			}
+			else 
+				return; //only exit if we are still in STOP
+		}
+
 		Process* runningProc = processor->GetRunningProcess();
 		if (runningProc != 0) {
-			runningProc->Tick();
+			runningProc->Tick(m_SimulationInfo.GetTimestep());
 
 			LOGF(L"Running proc id=%d, ticks=%d", runningProc->GetPID(), runningProc->GetTicks());
 
@@ -113,14 +134,26 @@ namespace core {
 
 		//call schedule algo
 		processor->ScheduleAlgo();
+
+		//update state timer
+		processor->UpdateStateTimer();
+
+		//should we overheat?
+		processor->CheckOverheat();
 	}
 
 	void Scheduler::Terminate() {
 		LOG(L"Terminating scheduler...");
 
+		m_Statistics.SetLastTime(m_SimulationInfo.GetTimestep());
+
 		//done, stop the simulation
 		m_SimulationInfo.Stop();
 		m_View.NotifyStopped();
+
+		LOG(L"Writing stats...");
+		m_Statistics.WriteToFile(&m_Processors, "otest.txt");
+		LOG(L"DONE");
 	}
 
 	void Scheduler::UpdateWorkStealing() {
@@ -204,6 +237,15 @@ namespace core {
 				stealCount++;
 
 				LOGF(L"Executed handle, stole pid=%d", handle.process->GetPID());
+
+				//increment statistic
+				ProcessDynamicMetadata* metadata = handle.process->GetDynamicMetadata();
+				if (!metadata->stolen) {
+					//mark stolen
+					metadata->stolen = true;
+
+					m_Statistics.AddStatistic(StatisticType::WorkSteal);
+				}
 			}
 
 			LOGF(L"Steal finished, count=%d", stealCount);
@@ -213,12 +255,39 @@ namespace core {
 		POPCOL();
 	}
 
+	int Scheduler::GetNumberOfActiveProcessors(ProcessorType type) {
+		int count = 0;
+
+		for (int i = 0; i < m_Processors.GetLength(); i++) {
+			Processor* cur = *m_Processors[i];
+			if ((type == ProcessorType::None || cur->GetProcessorType() == type) && cur->GetState() != ProcessorState::STOP) {
+				count++;
+			}
+		}
+
+		return count;
+	}
+
+	_STD wstring Scheduler::GetStatusbarText() {
+		wchar_t buf[100];
+		swprintf(buf, L"Active Processors(%d) TRM(%d/%d)", GetNumberOfActiveProcessors(ProcessorType::None), m_TerminatedProcesses.GetLength(), m_LoadFileInfo.data.proc_count);
+		return _STD wstring(buf);
+	}
+
 	LoadFileInfo* Scheduler::GetLoadFileInfo() {
 		return &m_LoadFileInfo;
 	}
 
 	SimulationInfo* Scheduler::GetSimulationInfo() {
 		return &m_SimulationInfo;
+	}
+
+	Statistics* Scheduler::GetStatistics() {
+		return &m_Statistics;
+	}
+
+	_UTIL Lock* Scheduler::GetSchedulerLock() {
+		return &m_SchedulerLock;
 	}
 
 	void Scheduler::Update() {
@@ -232,10 +301,13 @@ namespace core {
 			return;
 		}
 
+		//lock scheduler
+		m_SchedulerLock.Acquire();
+
 		int ts = m_SimulationInfo.GetTimestep();
 
 		//set log color
-		PUSHCOL(ts % 2 == 0 ? COL(BLACK, WHITE) : COL(WHITE, BLACK));
+		PUSHCOL(ts % 2 == 0 ? COL(GREY, BLACK) : COL(DARK_GREY, WHITE));
 
 		LOG(L"Scheduler update started");
 
@@ -251,6 +323,10 @@ namespace core {
 
 			//schedule it
 			Schedule(proc);
+
+			if (m_Statistics.GetFirstProcTime() == -1) {
+				m_Statistics.SetFirstProcTime(ts);
+			}
 		}
 
 		LOGF(L"Updating processors, count=%d", m_Processors.GetLength());
@@ -282,15 +358,20 @@ namespace core {
 
 		//pop logger color
 		POPCOL();
+
+		//unlock scheduler
+		m_SchedulerLock.Release();
 	}
 
-	void Scheduler::Schedule(Process* proc, ProcessorType processorType) {
+	void Scheduler::Schedule(Process* proc, ProcessorType processorType, Processor* exclude) {
 		LOG(L"Scheduling process, pid=" + _STD to_wstring(proc->GetPID()));
 
 		//get processor with shortest queue
-		Processor* processor = GetProcessorWithShortestQueue(processorType);
+		Processor* processor = GetProcessorWithShortestQueue(processorType, exclude);
 		if (processor == 0) {
 			//processor is null? this should never happen
+			//AMMAR: this is going to happen with overheat
+			//edit: added CanOverheat
 			return;
 		}
 
@@ -380,6 +461,12 @@ namespace core {
 		//add process to TRM list
 		m_TerminatedProcesses.Add(proc->GetPID());
 
+		//calc stats
+		proc->SetTerminationTime(m_SimulationInfo.GetTimestep());
+
+		//add stat
+		m_Statistics.AddProcessStatistic(proc);
+
 		ForkingData* forkingData = proc->GetForkingData();
 
 		if (forkingData->forgein_node) {
@@ -400,10 +487,11 @@ namespace core {
 				LOGF(L"Fatal error, forked proc owner isnt fcfs, pid=%d", child->GetPID());
 				POPCOL();
 
-				//todo: mark the children ORPH?
-
 				return;
 			}
+
+			//set orph
+			child->SetState(ProcessState::ORPH);
 
 			//kill child
 			fcfs->KillProcess(child->GetPID());
@@ -454,18 +542,78 @@ namespace core {
 
 		//schedule child process
 		Schedule(child, ProcessorType::FCFS);
+
+		//increment statistic
+		m_Statistics.AddStatistic(StatisticType::Fork);
 	}
 
 	void Scheduler::MigrateProcess(Process* proc, ProcessorType targetProcessorType) {
 		//caller has already ensured that targetProcessorType exists
 		if (proc == 0) return;
 
-		PUSHCOL(COL(DARK_GREEN, WHITE));
+		PUSHCOL(COL(DARK_RED, WHITE));
 		LOGF(L"Migrating proc %d to %s", proc->GetPID(), ProcessorTypeToWString(targetProcessorType).c_str());
 		POPCOL();
 
 		//schedule to some other processor
 		Schedule(proc, targetProcessorType);
+
+		//increment statistic
+
+		ProcessDynamicMetadata* metadata = proc->GetDynamicMetadata();
+		if (!metadata->migrated) {
+			metadata->migrated = true;
+
+			switch (targetProcessorType) {
+			case ProcessorType::SJF:
+				//RTF
+				m_Statistics.AddStatistic(StatisticType::MigrationRTF);
+				break;
+
+			case ProcessorType::RR:
+				//MaxW
+				m_Statistics.AddStatistic(StatisticType::MigrationMaxW);
+				break;
+
+			default:
+				//unknown migration?
+				PUSHCOL(COL(DARK_RED, WHITE));
+				LOGF(L"UNKNOWN MIGRATION, type=%s", ProcessorTypeToWString(targetProcessorType).c_str());
+				POPCOL();
+
+				//mark unmigrated
+				metadata->migrated = false;
+
+				break;
+			}
+		}
+	}
+
+	bool Scheduler::CanProcessorOverheat(ProcessorType type) {
+		//okay so we have many cases
+
+		int numFcfs = GetNumberOfActiveProcessors(ProcessorType::FCFS);
+		int numRR = GetNumberOfActiveProcessors(ProcessorType::RR);
+		int numSJF = GetNumberOfActiveProcessors(ProcessorType::SJF);
+		
+		//RR cant overheat if there is a FCFS processor that might migrate to it, if it's the only active RR processor
+		if (type == ProcessorType::RR && numRR == 1) {
+			if (numFcfs > 0) {
+				return false;
+			}
+		}
+
+		//SJF cant overheat if there is an RR processor that might migrate to it, if it's the only active SJF processor
+		if (type == ProcessorType::SJF && numSJF == 1) {
+			if (numRR > 0) {
+				return false;
+			}
+		}
+
+		//generally a processor cant overheat if there are no other processors to run the processes
+		//assume the calling processor still hasnt overheated, which makes them active wrt to their type
+		//so decrement number of other active processors by 1
+		return GetNumberOfActiveProcessors(ProcessorType::None) > 1;
 	}
 
 	void Scheduler::Print(_STD wstringstream& stream) {
@@ -500,7 +648,7 @@ namespace core {
 		//TRM
 		stream << L"\n\n\nTRM processes\n";
 		stream << m_TerminatedProcesses.GetLength() << L" TRM: ";
-
+		
 		for (_COLLECTION LinkedListNode<int>* node = m_TerminatedProcesses.GetHead(); node; node = node->next) {
 			stream << node->value << L", ";
 		}

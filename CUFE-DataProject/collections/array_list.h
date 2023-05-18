@@ -44,6 +44,12 @@ namespace collections {
 			UpdateAllocations(initialCapacity);
 		}
 
+		~ArrayList() {
+			if (m_Buffer) {
+				delete[] m_Buffer;
+			}
+		}
+
 		// Adds an element to the list
 		virtual void Add(T val) override {
 			CheckCapacity();

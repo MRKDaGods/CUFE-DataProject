@@ -1,8 +1,12 @@
 #include "processor.h"
 #include "scheduler.h"
+#include "random_engine.h"
+#include "processor_fcfs.h"
 
 namespace core {
-	Processor::Processor(ProcessorType type, Scheduler* scheduler) : m_Type(type), m_Scheduler(scheduler), m_ConcurrentTimer(0), m_State(ProcessorState::IDLE), m_RunningProcess(0) {
+	Processor::Processor(ProcessorType type, Scheduler* scheduler) : m_Type(type), m_Scheduler(scheduler), m_ConcurrentTimer(0), 
+		m_State(ProcessorState::IDLE), m_RunningProcess(0) {
+		memset(m_StateTimers, 0, 3 * sizeof(int));
 	}
 
 	ProcessorType Processor::GetProcessorType() {
@@ -17,6 +21,10 @@ namespace core {
 
 	ProcessorState Processor::GetState() {
 		return m_State;
+	}
+
+	void Processor::SetState(ProcessorState state) {
+		m_State = state;
 	}
 
 	Process* Processor::GetRunningProcess() {
@@ -129,6 +137,63 @@ namespace core {
 			<< L"]: ";
 	}
 
+	void Processor::UpdateStateTimer() {
+		if (m_State == ProcessorState::STOP) {
+			m_StateTimers[(int)ProcessorState::STOP]++;
+			return;
+		}
+
+		m_StateTimers[(int)(IsBusy() ? ProcessorState::BUSY : ProcessorState::IDLE)]++;
+	}
+
+	int Processor::GetStateTime(ProcessorState state) {
+		return m_StateTimers[(int)state];
+	}
+
+	float Processor::GetProcessorLoad() {
+		int trt = m_Scheduler->GetStatistics()->GetTotalTurnaroundDuration();
+		int busyTime = GetStateTime(ProcessorState::BUSY);
+		if (trt == 0) return busyTime > 0 ? 1.f : 0.f; //dont divide by zero
+
+		return busyTime / (float)trt;
+	}
+
+	float Processor::GetProcessorUtilization() {
+		int busyTime = GetStateTime(ProcessorState::BUSY);
+		int idleTime = GetStateTime(ProcessorState::IDLE);
+		float denominator = busyTime + idleTime;
+		return denominator == 0.f ? 0.f : busyTime / (float)(busyTime + idleTime);
+	}
+
+	void Processor::ResetStateTimer(ProcessorState state) {
+		m_StateTimers[(int)state] = 0;
+	}
+
+	void Processor::CheckOverheat() {
+		int num = RandomEngine::GetInt(1, 1000);
+		if (num <= OVERHEAT_PROB && m_Scheduler->CanProcessorOverheat(m_Type)) {
+			//check if fcfs and has orphans
+			if (m_Type == ProcessorType::FCFS) {
+				if (((ProcessorFCFS*)this)->HasOrphans()) {
+					return;
+				}
+			}
+
+			//overheat !!
+			SetState(ProcessorState::STOP);
+
+			PUSHCOL(COL(BLACK, WHITE));
+			LOG(L"OVERHEATING PROCESSOR");
+
+			//start migrating all
+			MigrateAllProcesses();
+
+			LOG(L"OVERHEATING DONE");
+
+			POPCOL();
+		}
+	}
+
 	_STD wstring ProcessorTypeToWString(ProcessorType type) {
 		switch (type) {
 		case ProcessorType::FCFS:
@@ -154,6 +219,9 @@ namespace core {
 
 		case ProcessorState::IDLE:
 			return L"IDLE";
+
+		case ProcessorState::STOP:
+			return L"STOP";
 		}
 
 		return L"";

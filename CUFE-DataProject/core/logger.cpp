@@ -29,7 +29,7 @@ namespace core {
 
 	void Logger::Log(LogMessage msg, bool acquireMutex) {
 		if (acquireMutex) { //prevent deadlock
-			AcquireMutex();
+			m_LoggerLock.Acquire();
 		}
 
 		constexpr int maxLen = LOG_WIDTH - 7;
@@ -59,7 +59,7 @@ namespace core {
 		}
 
 		if (acquireMutex) {
-			ReleaseMutex();
+			m_LoggerLock.Release();
 		}
 	}
 
@@ -72,7 +72,9 @@ namespace core {
 	}
 
 	void Logger::PushColor(_UI Color color) {
+		m_LoggerLock.Acquire();
 		m_ColorStack.Push(color);
+		m_LoggerLock.Release();
 	}
 
 	void Logger::PopColor() {
@@ -82,14 +84,7 @@ namespace core {
 		}
 	}
 
-	void Logger::AcquireMutex() {
-		//blocks thread till mutex is available
-		m_LogMutex.lock();
-
-		//should we use lock guard? RAI
-	}
-
-	void Logger::ReleaseMutex() {
-		m_LogMutex.unlock();
+	_UTIL Lock* Logger::GetLoggerLock() {
+		return &m_LoggerLock;
 	}
 }

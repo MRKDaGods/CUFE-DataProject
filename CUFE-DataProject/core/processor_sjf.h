@@ -9,6 +9,12 @@ namespace core {
 	private:
 		_COLLECTION ProcessLinkedPriorityQueue<_COLLECTION ProcessRemainingTimePriority> m_ReadyProcesses;
 
+	protected:
+		/// Migrates all the processes to other processors
+		virtual void MigrateAllProcesses() override;
+
+		virtual bool IsBusy() override;
+
 	public:
 		ProcessorSJF(Scheduler* scheduler);
 

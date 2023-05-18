@@ -27,7 +27,7 @@ namespace core {
 		constexpr struct {
 			wchar_t sym;
 			_UI Color col;
-		} buttons[3] = { 
+		} buttons[3] = {
 			{
 				L'►',
 				COL_BG(DARK_GREEN)
@@ -108,6 +108,9 @@ namespace core {
 		wchar_t buf[100];
 		swprintf(buf, L"%s (%s)", simMode.c_str(), simState);
 		m_UI->DrawString(0, screenSize.y - h / 2.f, buf, COLS(m_ToolbarColor, COL_FG(WHITE)));
+
+		_STD wstring schedText = m_Scheduler->GetStatusbarText();
+		m_UI->DrawString(screenSize.x - schedText.size() - 2, screenSize.y - h / 2.f, schedText, COLS(m_ToolbarColor, COL_FG(WHITE)));
 	}
 
 	void SchedulerView::RenderMenu() {
@@ -302,6 +305,11 @@ namespace core {
 	}
 
 	void SchedulerView::RenderProcessorData() {
+		_UTIL Lock* lock = m_Scheduler->GetSchedulerLock();
+
+		//acquire scheduler lock
+		lock->Acquire();
+
 		_STD wstringstream stream;
 		m_Scheduler->Print(stream);
 
@@ -338,12 +346,17 @@ namespace core {
 		swprintf(curTimestepBuf, L"Current Timestep: %d", m_Scheduler->GetSimulationInfo()->GetTimestep());
 		int len = _STD wcslen(curTimestepBuf);
 		m_UI->DrawString(w - len - 1, y + h - 6, curTimestepBuf, COLS(COL_BG(BLACK), COL_FG(CYAN)));
+
+		//release lock
+		lock->Release();
 	}
 
 	void SchedulerView::RenderLogs() {
 		Logger* logger = Logger::GetInstance();
+		_UTIL Lock* lock = logger->GetLoggerLock();
 
-		logger->AcquireMutex();
+		//acquire lock
+		lock->Acquire();
 
 		_UTIL Vector2 screenSize = m_UI->GetRenderer()->GetScreenSize();
 
@@ -364,7 +377,8 @@ namespace core {
 			m_UI->DrawString(x, curY, node->value.text, node->value.color);
 		}
 
-		logger->ReleaseMutex();
+		//release lock
+		lock->Release();
 	}
 
 	void SchedulerView::HandleToolbarAction(int i, _UI Color col) {

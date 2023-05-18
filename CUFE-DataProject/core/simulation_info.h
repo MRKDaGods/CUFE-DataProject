@@ -68,7 +68,7 @@ namespace core {
 		/// <summary>
 		/// Should the scheduler update?
 		/// </summary>
-		bool CanUpdateScheduler();
+		bool CanUpdateScheduler(int* sleepTime);
 
 		/// <summary>
 		/// Starts the simulation with respect to the current mode

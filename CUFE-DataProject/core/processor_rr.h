@@ -19,8 +19,13 @@ namespace core {
 		int m_ProcessStartTicks;
 
 	protected:
-		// Attempt to migrate the process from this processor to another
+		/// Attempt to migrate the process from this processor to another
 		virtual bool TryMigrate(Process*& proc) override;
+
+		/// Migrates all the processes to other processors
+		virtual void MigrateAllProcesses() override;
+
+		virtual bool IsBusy() override;
 
 	public:
 		ProcessorRR(Scheduler* scheduler);

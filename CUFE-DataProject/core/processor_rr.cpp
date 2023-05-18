@@ -104,23 +104,51 @@ namespace core {
 
 		LoadFileInfo* fileInfo = m_Scheduler->GetLoadFileInfo();
 
-		//check for RR processors
-		if (fileInfo->data.num_processors_rr <= 0) return false;
+		//check for SJF processors
+		if (fileInfo->data.num_processors_sjf <= 0) return false;
 
 		//check for rtf constraint
 		if (proc->GetRemainingTime() >= fileInfo->data.rtf) return false;
 
+		//check for overheat
+		if (m_Scheduler->GetNumberOfActiveProcessors(ProcessorType::SJF) == 0) return false;
+
 		//start migration
+		//decrement timer
+		DecrementTimer(proc);
+
+		//set idle for now
+		m_State = ProcessorState::IDLE;
+
+		m_Scheduler->MigrateProcess(proc, ProcessorType::SJF);
+
+		//set null
 		//remove proc
 		if (m_RunningProcess == proc) {
 			m_RunningProcess = 0;
 		}
 
-		m_Scheduler->MigrateProcess(proc, ProcessorType::SJF);
-
-		//set null
 		proc = 0;
 
 		return true;
+	}
+
+	void ProcessorRR::MigrateAllProcesses() {
+		if (m_RunningProcess != 0) {
+			DecrementTimer(m_RunningProcess);
+			m_Scheduler->Schedule(m_RunningProcess, ProcessorType::None, this);
+
+			m_RunningProcess = 0;
+		}
+
+		Process* proc;
+		while (m_ReadyProcesses.Dequeue(&proc)) {
+			DecrementTimer(proc);
+			m_Scheduler->Schedule(proc, ProcessorType::None, this);
+		}
+	}
+
+	bool ProcessorRR::IsBusy() {
+		return m_RunningProcess || m_ReadyProcesses.GetLength() > 0;
 	}
 }

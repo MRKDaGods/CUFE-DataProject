@@ -23,3 +23,10 @@ typedef unsigned int uint32_t;
 #define _CRT_NON_CONFORMING_SWPRINTFS
 
 #define BOOL_TO_WSTR(b) (b ? L"TRUE" : L"FALSE")
+
+#define OVERRIDE_OVERHEAT_DELAY
+#define OVERHEAT_DELAY 10
+
+// Overheat probability isnt in input file
+// OVERHEAT_PROB / 1000
+#define OVERHEAT_PROB 1

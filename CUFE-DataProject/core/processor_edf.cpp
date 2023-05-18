@@ -1,4 +1,5 @@
 #include "processor_edf.h"
+#include "scheduler.h"
 
 namespace core {
     ProcessorEDF::ProcessorEDF(Scheduler* scheduler) : Processor(ProcessorType::EDF, scheduler) {
@@ -78,5 +79,24 @@ namespace core {
         };
 
         return true;
+    }
+
+    void ProcessorEDF::MigrateAllProcesses() {
+        if (m_RunningProcess != 0) {
+            DecrementTimer(m_RunningProcess);
+            m_Scheduler->Schedule(m_RunningProcess, ProcessorType::None, this);
+
+            m_RunningProcess = 0;
+        }
+
+        Process* proc;
+        while (m_ReadyProcesses.Dequeue(&proc)) {
+            DecrementTimer(proc);
+            m_Scheduler->Schedule(proc, ProcessorType::None, this);
+        }
+    }
+
+    bool ProcessorEDF::IsBusy() {
+        return m_RunningProcess || m_ReadyProcesses.GetLength() > 0;
     }
 }
