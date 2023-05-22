@@ -152,7 +152,7 @@ namespace core {
 		m_View.NotifyStopped();
 
 		LOG(L"Writing stats...");
-		m_Statistics.WriteToFile(&m_Processors, "otest.txt");
+		m_Statistics.WriteToFile(&m_Processors, "output.txt");
 		LOG(L"DONE");
 	}
 
@@ -228,6 +228,8 @@ namespace core {
 
 				//queue process
 				min.processor->QueueProcess(handle.process);
+
+				//m_SimulationInfo.SetMode(SimulationMode::Interactive);
 
 				//update min, max times
 				min.time = min.processor->GetConcurrentTimer(false);

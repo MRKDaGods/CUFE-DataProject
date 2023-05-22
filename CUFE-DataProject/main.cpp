@@ -22,7 +22,9 @@ int main() {
 			sched.Update();
 		}
 
-		Sleep(sleepTime);
+		if (sleepTime > 0) {
+			Sleep(sleepTime);
+		}
 	}
 
 	//clean up random engine

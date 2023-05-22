@@ -35,7 +35,7 @@ namespace core {
 			return true;
 
 		case core::SimulationMode::Silent:
-			*sleepTime = 0; //dont sleep
+			*sleepTime = 1; //dont sleep
 
 			IncrementTimestep();
 			return true;
@@ -85,9 +85,9 @@ namespace core {
 		m_Dirty = true;
 	}
 
-	void SimulationInfo::SetMode(SimulationMode& mode) {
+	void SimulationInfo::SetMode(SimulationMode mode) {
 		//stop then change the mode
-		Stop();
+		//Stop();
 		
 		m_Mode = mode;
 	}

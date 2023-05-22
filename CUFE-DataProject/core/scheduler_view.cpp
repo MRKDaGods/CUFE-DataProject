@@ -407,7 +407,7 @@ namespace core {
 	}
 
 	void SchedulerView::UICallback() {
-		RenderProcessorData();
+			RenderProcessorData();
 
 		if (m_ShowingLogs) {
 			RenderLogs();

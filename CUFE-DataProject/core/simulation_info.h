@@ -93,7 +93,7 @@ namespace core {
 		/// <summary>
 		/// Sets the current simulaiton mode
 		/// </summary>
-		void SetMode(SimulationMode& mode);
+		void SetMode(SimulationMode mode);
 
 		/// <summary>
 		/// Sets the dirty flag to false (the current frame has finished running)

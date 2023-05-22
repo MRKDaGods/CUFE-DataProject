@@ -149,6 +149,8 @@ namespace core {
 
 			//terminate it
 			TerminateRunningProcess();
+
+			m_Scheduler->GetStatistics()->AddStatistic(StatisticType::Kill);
 			return;
 		}
 
@@ -163,6 +165,8 @@ namespace core {
 
 			//terminate
 			TerminateProcess(proc);
+
+			m_Scheduler->GetStatistics()->AddStatistic(StatisticType::Kill);
 		}
 		else {
 			LOG(L"Not found, ignoring sigkill...");
